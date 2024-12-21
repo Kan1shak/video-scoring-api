@@ -2,20 +2,16 @@ import json
 import google.generativeai as genai
 import os
 from fastapi import HTTPException
-from ..models.schemas import VideoRequest, VideoResponse, Scoring, ScoringTypedDict, Metadata, Resolution
-from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
-from ..utils.helpers import download_file
+from models.schemas import VideoRequest, VideoResponse, Scoring, ScoringTypedDict, Metadata, Resolution
+from utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
+from utils.helpers import download_file
 
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 class VideoScorer:
-    def __init__(self,video_request: VideoRequest):
+    def __init__(self,video_request: VideoRequest, generated_video_path: str):
         self.video_request = video_request
-        generation_config = {
-                "temperature": 1,
-                "top_p": 0.95,
-                "top_k": 40,
-        }
+        self.generated_video_path = generated_video_path
         self.llm =  genai.GenerativeModel(
                         model_name="gemini-2.0-flash-exp",
                         generation_config=gemini_generation_config,
@@ -45,10 +41,10 @@ Now based on the criteria, and the information provided, you need to:
                 "response_schema": ScoringTypedDict
             },
             safety_settings=safety_settings,
-            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response."
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. For the jusitification part, provide a brief summary of the scoring criteria and how the video meets the criteria."
         )
-    def score_video(self,generated_path:str = "data/generated.mp4") -> VideoResponse:
-        generated_video_path = os.path.abspath(generated_path)
+    def score_video(self) -> VideoResponse:
+        generated_video_path = os.path.abspath(self.generated_video_path)
         logo_url = self.video_request.video_details.logo_url
         logo_path = download_file(logo_url, "logo.png")
         video_request_dict = self.video_request.model_dump()

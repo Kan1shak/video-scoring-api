@@ -45,6 +45,7 @@ class Scoring(BaseModel):
     call_to_action: float
     audience_relevance: float
     total_score: float
+    justifications: str
 
 class ScoringTypedDict(typing.TypedDict):
     background_foreground_separation: float
@@ -54,6 +55,7 @@ class ScoringTypedDict(typing.TypedDict):
     call_to_action: float
     audience_relevance: float
     total_score: float
+    justifications: str
 
 class VideoResponse(BaseModel):
     status: str
