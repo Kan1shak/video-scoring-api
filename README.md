@@ -7,6 +7,7 @@ pinned: false
 license: mit
 short_description: Video Scoring API written in FastAPI
 ---
+^ required for Hugging face Spaces
 
 # Video Creative Scoring API | Team Chill Guys
 
