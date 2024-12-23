@@ -3,10 +3,10 @@ from pathlib import Path
 import shutil
 import os
 
-from models.schemas import VideoRequest, VideoResponse, Scoring, Metadata, Resolution
-from services.video_scorer import VideoScorer
-from services.video_generator import VideoGenerator
-from utils.helpers import get_video_metadata
+from .models.schemas import VideoRequest, VideoResponse, Scoring, Metadata, Resolution
+from .services.video_scorer import VideoScorer
+from .services.video_generator import VideoGenerator
+from .utils.helpers import get_video_metadata
 
 app = FastAPI(title="Video Scoring API | Team Chill Guys")
 

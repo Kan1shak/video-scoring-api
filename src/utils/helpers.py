@@ -5,7 +5,7 @@ import cv2
 import cloudinary 
 import cloudinary.uploader
 import cloudinary.api
-from models.schemas import Metadata, Resolution
+from ..models.schemas import Metadata, Resolution
 from io import BytesIO
 from PIL import Image
 from moviepy.editor import VideoFileClip, concatenate_videoclips

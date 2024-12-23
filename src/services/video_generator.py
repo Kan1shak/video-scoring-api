@@ -2,9 +2,9 @@ import json
 from typing import Dict
 import fal_client
 import google.generativeai as genai
-from models.schemas import VideoRequest, VideoGenerationPrompts
-from utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
-from utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video
+from ..models.schemas import VideoRequest, VideoGenerationPrompts
+from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
+from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video
 
 def on_queue_update(update):
     if isinstance(update, fal_client.InProgress):

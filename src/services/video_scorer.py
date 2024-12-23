@@ -2,9 +2,9 @@ import json
 import google.generativeai as genai
 import os
 from fastapi import HTTPException
-from models.schemas import VideoRequest, VideoResponse, Scoring, ScoringTypedDict, Metadata, Resolution
-from utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
-from utils.helpers import download_file
+from ..models.schemas import VideoRequest, VideoResponse, Scoring, ScoringTypedDict, Metadata, Resolution
+from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
+from ..utils.helpers import download_file
 
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
