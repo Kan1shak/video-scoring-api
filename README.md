@@ -1,3 +1,13 @@
+---
+title: video-scoring-api
+emoji: 🐻
+colorFrom: blue
+sdk: docker
+pinned: false
+license: mit
+short_description: Video Scoring API written in FastAPI
+---
+
 # Video Creative Scoring API | Team Chill Guys
 
 A FastAPI-based service that evaluates video creatives using multimodal LLM analysis. The service processes videos according to provided brand guidelines and scoring criteria, providing detailed scoring and justifications for marketing videos.
@@ -231,13 +241,3 @@ The API employs a three-stage evaluation process:
 Total possible score: 100 points
 
 Each criterion includes detailed justifications in the API response, explaining the rationale behind the scores and providing actionable feedback for improvements.
-
----
-title: video-scoring-api
-emoji: 🐻
-colorFrom: blue
-sdk: docker
-pinned: false
-license: mit
-short_description: Video Scoring API written in FastAPI
----
