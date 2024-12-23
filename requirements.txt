@@ -9,3 +9,4 @@ cloudinary
 opencv-python
 moviepy==1.0.3
 uvicorn
+numpy

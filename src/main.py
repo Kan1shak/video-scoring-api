@@ -35,11 +35,11 @@ async def score_video(
         
         # get video metadata
         metadata = get_video_metadata(str(video_path))
-        
+        metadata.resolution.width = request.video_details.dimensions.width
+        metadata.resolution.height = request.video_details.dimensions.height
         # creating response
         response = VideoResponse(
             status="success",
-            # just a placeholder for now
             video_url=generated_url,
             scoring=scoring,
             metadata=metadata

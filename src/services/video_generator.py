@@ -4,7 +4,7 @@ import fal_client
 import google.generativeai as genai
 from ..models.schemas import VideoRequest, VideoGenerationPrompts
 from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
-from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video
+from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video, add_watermark
 
 def on_queue_update(update):
     if isinstance(update, fal_client.InProgress):
@@ -209,8 +209,10 @@ Remember: Each element you describe must contribute to achieving maximum points 
         # else we will generate the video 
         if "ecovive" in self.video_request.video_details.product_name.lower():
             eco_wive_full_res = "https://res.cloudinary.com/dzz1r3hcf/video/upload/v1734951827/xszvrae8vyvyv2ftudwj.mp4"
-            download_file(eco_wive_full_res, "final_video_ecovive.mp4")
-            return "tmp/final_video_ecovive.mp4", upload_and_crop_video("tmp/final_video_ecovive.mp4", self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
+            video_path = download_file(eco_wive_full_res, "final_video_ecovive.mp4")
+            logo_path = download_file(self.video_request.video_details.logo_url, "logo.png")
+            add_watermark(video_path, logo_path,"tmp/final_video_ecovive_watermarked.mp4")
+            return "tmp/final_video_ecovive_watermarked.mp4", upload_and_crop_video("tmp/final_video_ecovive_watermarked.mp4", self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
 
 
         # downloading logo
@@ -290,17 +292,18 @@ Some more things you should focus into:
         # generate the last segment
         _ = self.generate_segment(prompts["segment_three_motion"], last_frame_url, video_paths[2])
 
-
         # combine the segments
         video_paths = ["segment_1.mp4", "segment_2.mp4", "segment_3.mp4"]
         video_paths = ["tmp/"+path for path in video_paths]
         output_path = "data/merged_output.mp4"
         merge_videos(video_paths, output_path)
+        output_path_w = "data/merged_output_watermarked.mp4"
+        add_watermark(output_path, logo_path, output_path_w)
 
         # upload and crop the video based on the given dimensions
-        output_url = upload_and_crop_video(output_path, self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
+        output_url = upload_and_crop_video(output_path_w, self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
 
-        return output_path, output_url
+        return output_path_w, output_url
     
     def get_first_frame(self,prompts:Dict) -> str:
         try:

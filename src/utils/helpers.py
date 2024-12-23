@@ -5,10 +5,11 @@ import cv2
 import cloudinary 
 import cloudinary.uploader
 import cloudinary.api
+import numpy as np
 from ..models.schemas import Metadata, Resolution
 from io import BytesIO
 from PIL import Image
-from moviepy.editor import VideoFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip, CompositeVideoClip
 
 cloud_name = os.getenv('CLOUD_NAME')
 api_key = os.getenv('API_KEY')
@@ -113,3 +114,29 @@ def upload_and_crop_video(video_path:str, crop_width:int, crop_height:int) -> st
     except Exception as e:
         print(f"Error: {str(e)}")
         return None
+    
+def add_watermark(video_path:str, logo_path:str, output_path:str) -> None:
+    video = VideoFileClip(video_path)
+    
+    logo = ImageClip(logo_path, transparent=True)
+    
+    logo_width = video.w // 8  # w is video width
+    logo = logo.resize(width=logo_width)  # maintains aspect ratio
+    logo = logo.set_opacity(0.7)
+    padding = 20
+    x = video.w - logo.w - padding
+    y = video.h - logo.h - padding
+    
+    logo = logo.set_position((x, y))
+    logo = logo.set_duration(video.duration)
+    
+    final_video = CompositeVideoClip([video, logo])
+    
+    final_video.write_videofile(
+        output_path,
+        codec='libx264',
+        audio_codec='aac'
+    )
+    
+    video.close()
+    final_video.close()

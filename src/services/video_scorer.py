@@ -44,7 +44,7 @@ Now based on the criteria, and the information provided, you need to:
                 "response_schema": ScoringTypedDict
             },
             safety_settings=safety_settings,
-            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. For the jusitification part, provide brief summaries of each scoring criteria and how the video meets that criteria."
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. For the jusitification part, provide brief summaries of each scoring criteria and how the video meets that criteria. For the scores, don't do any divisions to make it a percentage, just provide the raw scores."
         )
     def score_video(self) -> VideoResponse:
         generated_video_path = os.path.abspath(self.generated_video_path)
@@ -61,7 +61,7 @@ More info on Scording Criteria:
 ○ Background and Foreground Separation:
 	■ Clear and visually distinct separation.
 ○ Adherence to Brand Guidelines:
-	■ Consistency in using brand colors, fonts, and logo.
+	■ Consistency in using brand colors, and logo.
 ○ Creativity and Visual Appeal:
 	■ Engaging storytelling, transitions, and animations.
 ○ Product Focus:
