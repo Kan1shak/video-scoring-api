@@ -37,6 +37,14 @@ class Metadata(BaseModel):
     duration_seconds: int
     resolution: Resolution
 
+class Justifications(BaseModel):
+    background_foreground_separation: str
+    brand_guideline_adherence: str
+    creativity_visual_appeal: str
+    product_focus: str
+    call_to_action: str
+    audience_relevance: str
+    
 class Scoring(BaseModel):
     background_foreground_separation: float
     brand_guideline_adherence: float
@@ -45,6 +53,8 @@ class Scoring(BaseModel):
     call_to_action: float
     audience_relevance: float
     total_score: float
+    justifications: Justifications
+
 
 class ScoringTypedDict(typing.TypedDict):
     background_foreground_separation: float
@@ -54,9 +64,19 @@ class ScoringTypedDict(typing.TypedDict):
     call_to_action: float
     audience_relevance: float
     total_score: float
+    justifications: Justifications
 
 class VideoResponse(BaseModel):
     status: str
     video_url: str
     scoring: Scoring
     metadata: Metadata
+
+class VideoGenerationPrompts(BaseModel):
+    hero_prompt: str
+    segment_one_keyframe: str
+    segment_one_motion: str
+    segment_two_keyframe: str
+    segment_two_motion: str
+    segment_three_keyframe: str
+    segment_three_motion: str

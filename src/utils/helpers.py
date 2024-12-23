@@ -1,5 +1,25 @@
+from typing import List
 import requests
 import os
+import cv2
+import cloudinary 
+import cloudinary.uploader
+import cloudinary.api
+import numpy as np
+from ..models.schemas import Metadata, Resolution
+from io import BytesIO
+from PIL import Image
+from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip, CompositeVideoClip
+
+cloud_name = os.getenv('CLOUD_NAME')
+api_key = os.getenv('API_KEY')
+api_secret = os.getenv('API_SECRET')
+
+cloudinary.config(
+    cloud_name=cloud_name,
+    api_key=api_key,
+    api_secret=api_secret
+)
 
 def download_file(url:str, filename:str) -> str:
     """
@@ -18,3 +38,105 @@ def download_file(url:str, filename:str) -> str:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
     return filename
+
+def get_video_metadata(video_path: str) -> Metadata:
+    """
+    Get video metadata using OpenCV
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError("Could not open video file")
+
+    # Get basic video metadata
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    duration = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS))
+    file_size = os.path.getsize(video_path) / (1024 * 1024)  # convert to MBs
+
+    cap.release()
+
+    return Metadata(
+        file_size_mb=round(file_size, 2),
+        duration_seconds=duration,
+        resolution=Resolution(width=width, height=height)
+    )
+
+
+def upload_image(image: Image) -> str:
+    try:
+        img_byte_arr = BytesIO()
+        image.save(img_byte_arr, format='PNG') 
+        img_byte_arr.seek(0) 
+        url = cloudinary.uploader.upload(img_byte_arr)
+        return url['secure_url']
+    except Exception as e:
+        return f"Error uploading the image: {e}"
+    
+def get_last_frame(video_path: str) -> Image:
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise ValueError("Could not open video file")
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
+    ret, frame = cap.read()
+    if not ret:
+        raise ValueError("Could not read the video frame")
+
+    cap.release()
+
+    return Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+def merge_videos(video_paths:List, output_path:str)->None:
+    try:
+        video_clips = [VideoFileClip(path) for path in video_paths]
+        final_clip = concatenate_videoclips(video_clips)
+        final_clip.write_videofile(output_path)
+        
+        for clip in video_clips:
+            clip.close()
+    except Exception as e:
+        print(f"Error merging videos: {e}")
+
+def upload_and_crop_video(video_path:str, crop_width:int, crop_height:int) -> str:
+    try:
+        # Upload with cropping transformation
+        result = cloudinary.uploader.upload(video_path,
+            resource_type = "video",
+            transformation=[
+                {
+                    'width': crop_width, 
+                    'height': crop_height,
+                    'crop': 'fill'  # or 'fill', 'pad', 'scale', etc.
+                }
+            ]
+        )
+        return result['secure_url']
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return None
+    
+def add_watermark(video_path:str, logo_path:str, output_path:str) -> None:
+    video = VideoFileClip(video_path)
+    
+    logo = ImageClip(logo_path, transparent=True)
+    
+    logo_width = video.w // 8  # w is video width
+    logo = logo.resize(width=logo_width)  # maintains aspect ratio
+    logo = logo.set_opacity(0.7)
+    padding = 20
+    x = video.w - logo.w - padding
+    y = video.h - logo.h - padding
+    
+    logo = logo.set_position((x, y))
+    logo = logo.set_duration(video.duration)
+    
+    final_video = CompositeVideoClip([video, logo])
+    
+    final_video.write_videofile(
+        output_path,
+        codec='libx264',
+        audio_codec='aac'
+    )
+    
+    video.close()
+    final_video.close()

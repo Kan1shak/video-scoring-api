@@ -4,3 +4,9 @@ grpcio==1.67.1
 requests
 typing_extensions
 fastapi
+fal-client
+cloudinary
+opencv-python
+moviepy==1.0.3
+uvicorn
+numpy

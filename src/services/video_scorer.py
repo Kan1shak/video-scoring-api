@@ -9,13 +9,9 @@ from ..utils.helpers import download_file
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 class VideoScorer:
-    def __init__(self,video_request: VideoRequest):
+    def __init__(self,video_request: VideoRequest, generated_video_path: str):
         self.video_request = video_request
-        generation_config = {
-                "temperature": 1,
-                "top_p": 0.95,
-                "top_k": 40,
-        }
+        self.generated_video_path = generated_video_path
         self.llm =  genai.GenerativeModel(
                         model_name="gemini-2.0-flash-exp",
                         generation_config=gemini_generation_config,
@@ -32,7 +28,10 @@ f"""You will be given the following information by the user:
 - These videos are targeted at an age group of millennials, aged 25-35. 
 Now based on the criteria, and the information provided, you need to:
 - Firstly build an even more detailed rubric for awarding points. 
-- After creating the rubric, now step by step score the video with your justifications. 
+- After creating the rubric, now step by step score the video with your justifications.
+- Score the videos for the total duration, and not frame by frame analysis.
+- The final score is not a percentage, but a score out of the maximum total score.
+- Include jusitifications for each category in the scoring.
 """
                     )
         self.llm_json_writer = genai.GenerativeModel(
@@ -45,10 +44,10 @@ Now based on the criteria, and the information provided, you need to:
                 "response_schema": ScoringTypedDict
             },
             safety_settings=safety_settings,
-            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response."
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. For the jusitification part, provide brief summaries of each scoring criteria and how the video meets that criteria. For the scores, don't do any divisions to make it a percentage, just provide the raw scores."
         )
-    def score_video(self,generated_path:str = "data/generated.mp4") -> VideoResponse:
-        generated_video_path = os.path.abspath(generated_path)
+    def score_video(self) -> VideoResponse:
+        generated_video_path = os.path.abspath(self.generated_video_path)
         logo_url = self.video_request.video_details.logo_url
         logo_path = download_file(logo_url, "logo.png")
         video_request_dict = self.video_request.model_dump()
@@ -62,7 +61,7 @@ More info on Scording Criteria:
 ○ Background and Foreground Separation:
 	■ Clear and visually distinct separation.
 ○ Adherence to Brand Guidelines:
-	■ Consistency in using brand colors, fonts, and logo.
+	■ Consistency in using brand colors, and logo.
 ○ Creativity and Visual Appeal:
 	■ Engaging storytelling, transitions, and animations.
 ○ Product Focus:
