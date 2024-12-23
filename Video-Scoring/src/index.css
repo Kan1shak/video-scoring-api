@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.Scroll{
+  -ms-overflow-style: none; 
+  scrollbar-width: none;
+}
+
+.slideIn{
+  transform: translateY(-100%);
+  transition: transform 3s;
+}
+
+
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes time {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 10s linear infinite;
+}
+
+.animate-reverse {
+  animation: time 10s linear infinite;
+}
+
+.pie-chart {
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.pie-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.pie-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+}
