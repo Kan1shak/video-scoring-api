@@ -209,8 +209,8 @@ Remember: Each element you describe must contribute to achieving maximum points 
         # else we will generate the video 
         if "ecovive" in self.video_request.video_details.product_name.lower():
             eco_wive_full_res = "https://res.cloudinary.com/dzz1r3hcf/video/upload/v1734951827/xszvrae8vyvyv2ftudwj.mp4"
-            download_file(eco_wive_full_res, "data/final_video_ecovive.mp4")
-            return "data/final_video_ecovive.mp4", upload_and_crop_video("data/final_video_ecovive.mp4", self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
+            download_file(eco_wive_full_res, "final_video_ecovive.mp4")
+            return "tmp/final_video_ecovive.mp4", upload_and_crop_video("tmp/final_video_ecovive.mp4", self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
 
 
         # downloading logo
