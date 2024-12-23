@@ -27,16 +27,16 @@ async def score_video(
 
     # now we score the video
     try:
-        # Initialize scorer with request data
+        # initialize scorer with request data
         scorer = VideoScorer(request, video_path)
         
-        # Get video scoring
+        # get video scoring
         scoring = scorer.score_video()
         
-        # Get video metadata
+        # get video metadata
         metadata = get_video_metadata(str(video_path))
         
-        # Create response
+        # creating response
         response = VideoResponse(
             status="success",
             # just a placeholder for now
@@ -50,7 +50,7 @@ async def score_video(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        # Clean up uploaded file
+        # clean up uploaded file
         if video_path.exists():
             # for testing we are not deleting the video
             #video_path.unlink()

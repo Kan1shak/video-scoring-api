@@ -28,7 +28,10 @@ f"""You will be given the following information by the user:
 - These videos are targeted at an age group of millennials, aged 25-35. 
 Now based on the criteria, and the information provided, you need to:
 - Firstly build an even more detailed rubric for awarding points. 
-- After creating the rubric, now step by step score the video with your justifications. 
+- After creating the rubric, now step by step score the video with your justifications.
+- Score the videos for the total duration, and not frame by frame analysis.
+- The final score is not a percentage, but a score out of the maximum total score.
+- Include jusitifications for each category in the scoring.
 """
                     )
         self.llm_json_writer = genai.GenerativeModel(
@@ -41,7 +44,7 @@ Now based on the criteria, and the information provided, you need to:
                 "response_schema": ScoringTypedDict
             },
             safety_settings=safety_settings,
-            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. For the jusitification part, provide a brief summary of the scoring criteria and how the video meets the criteria."
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. For the jusitification part, provide brief summaries of each scoring criteria and how the video meets that criteria."
         )
     def score_video(self) -> VideoResponse:
         generated_video_path = os.path.abspath(self.generated_video_path)
