@@ -1,14 +1,42 @@
 import React from 'react';
+import { useState } from 'react';
 import { useSharedContext } from '../sharedContext';
+import { useEffect } from 'react';
+import { use } from 'react';
 
 const Dashboard = () => {
+  const [count,setCount] = useState(0)
+  const [minutes, setMinutes] = useState(15);
+  const [seconds, setSeconds] = useState(0);
+  const [isRunning, setIsRunning] = useState(false); 
 
-  const [key,setKey] = React.useState('');
-  const [visible, setVisible] = React.useState(false);
+  const [key,setKey] = useState('');
+  const [visible, setVisible] = useState(false);
   const { inputData, outputData } = useSharedContext();
 
-  console.log("OutputData:" ,outputData);
-  console.log("InputData:", inputData);
+  useEffect(()=>{
+  if(outputData.video_url){
+    setIsRunning(false);
+  }
+  else{
+    setIsRunning(true)
+  }
+},[outputData])
+
+  useEffect(() => {
+    let timerInterval;
+    if (isRunning) {
+      timerInterval = setInterval(() => {
+        setSeconds((prevTime) => prevTime - 1)
+        setCount((prev)=>prev+1);
+      }, 1000);
+    }
+    if(seconds < 0){
+      setSeconds(59);
+      setMinutes((prevTime) => prevTime - 1);
+    }
+    return () => clearInterval(timerInterval);
+  }, [isRunning,seconds]); 
 
   const handleVisible = (key) => {
     setVisible(true);
@@ -19,7 +47,7 @@ const Dashboard = () => {
 
 
   return (
-    <div className="p-6 relative bg-gray-900 min-h-screen">
+    <div className="p-6 overflow-hidden relative bg-gray-900 min-h-screen">
       <div className="flex justify-between items-center bg-gray-800 p-4 rounded-md shadow-md">
         <div className="flex space-x-4">
           <button className="px-4 py-2 bg-green-500 text-white rounded-md">Video</button>
@@ -32,16 +60,20 @@ const Dashboard = () => {
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-gray-800 p-4 rounded-md shadow-md col-span-2">
-          <div className="w-full aspect-video bg-gray-900 rounded-md flex items-center justify-center">
+          <div className="w-full relative aspect-video bg-gray-900 rounded-md flex items-center justify-center">
             <span className="text-gray-500">
-            <video className=''
+            {outputData.video_url? (<video className=''
             loop
             controls
             autoPlay
             muted
             src={outputData.video_url}
-            ></video>
+            ></video>):(<img 
+            className='w-64 h-64'
+            src='https://media.tenor.com/Y7bSnLM1Cw8AAAAj/bar-penguin.gif'></img>)
+            }
             </span>
+            {outputData.video_url? '':<p className='absolute right-5  bottom-5 text-white'>Time Left ≈ {minutes} m : {seconds} s</p>}
           </div>
           <div className="mt-4 flex items-center justify-between">
             <h2 className="text-lg font-bold text-white">Video Generation</h2>
@@ -50,12 +82,14 @@ const Dashboard = () => {
         </div>
 
         {/* Metrics Section */}
-        <div className="bg-gray-800 p-4 rounded-md shadow-md">
+        <div className="bg-gray-800 relative p-4 rounded-md shadow-md">
           <h2 className="text-lg font-bold mb-4 text-white">Metrics</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className=" grid grid-cols-3 gap-4">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600">100</span>
+                {outputData.video_url?(<span className="text-green-600">100</span>):(<img 
+className='w-6 h-6'
+src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">Success</span>
             </div>
@@ -65,10 +99,12 @@ const Dashboard = () => {
               className={` ${(outputData?.scoring?.background_foreground_separation/inputData?.scoring_criteria?.background_foreground_separation*100)<30?'bg-red-100':
                 (outputData?.scoring?.background_foreground_separation/inputData?.scoring_criteria?.background_foreground_separation*100)<70?
                 'bg-yellow-100':'bg-green-100'} w-12 h-12 rounded-full flex items-center justify-center`}>
-                <span className={`${(outputData?.scoring?.background_foreground_separation/inputData?.scoring_criteria?.background_foreground_separation*100)<30?'text-red-600':
+                {outputData.video_url? (<span className={`${(outputData?.scoring?.background_foreground_separation/inputData?.scoring_criteria?.background_foreground_separation*100)<30?'text-red-600':
                   (outputData?.scoring?.background_foreground_separation/inputData?.scoring_criteria?.background_foreground_separation*100)<70?
                   'text-yellow-600':'text-green-600'}`}>{(outputData?.scoring?.background_foreground_separation
-/inputData?.scoring_criteria?.background_foreground_separation*100).toFixed(1)}</span>
+/inputData?.scoring_criteria?.background_foreground_separation*100).toFixed(1)}</span>):(<img 
+  className='w-6 h-6'
+  src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">BG seperation</span>
             </div>
@@ -78,10 +114,12 @@ const Dashboard = () => {
               className={`${(outputData?.scoring?.product_focus/inputData?.scoring_criteria?.product_focus*100)<30?'bg-red-100':
                 (outputData?.scoring?.product_focus/inputData?.scoring_criteria?.product_focus*100)<70?
                 'bg-yellow-100':'bg-green-100'} w-12 h-12 bg-green-100 rounded-full flex items-center justify-center`}>
-                <span className={`${(outputData?.scoring?.product_focus/inputData?.scoring_criteria?.product_focus*100)<30?'text-red-600':
+                {outputData.video_url? (<span className={`${(outputData?.scoring?.product_focus/inputData?.scoring_criteria?.product_focus*100)<30?'text-red-600':
                   (outputData?.scoring?.product_focus/inputData?.scoring_criteria?.product_focus*100)<70?
                   'text-yellow-600':'text-green-600'}`}>{(outputData?.scoring?.product_focus
-/inputData?.scoring_criteria?.product_focus*100).toFixed(1)}</span>
+/inputData?.scoring_criteria?.product_focus*100).toFixed(1)}</span>):(<img 
+  className='w-6 h-6'
+  src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">Product Focus</span>
             </div>
@@ -91,10 +129,12 @@ const Dashboard = () => {
               className={`${(outputData?.scoring?.creativity_visual_appeal/inputData?.scoring_criteria?.creativity_visual_appeal*100)<30?'bg-red-100':
                 (outputData?.scoring?.creativity_visual_appeal/inputData?.scoring_criteria?.creativity_visual_appeal*100)<70?
                 'bg-yellow-100':'bg-green-100'} w-12 h-12 bg-green-100 rounded-full flex items-center justify-center`}>
-                <span className={`${(outputData?.scoring?.creativity_visual_appeal/inputData?.scoring_criteria?.creativity_visual_appeal*100)<30?'text-red-600':
+                {outputData.video_url? (<span className={`${(outputData?.scoring?.creativity_visual_appeal/inputData?.scoring_criteria?.creativity_visual_appeal*100)<30?'text-red-600':
                   (outputData?.scoring?.creativity_visual_appeal/inputData?.scoring_criteria?.creativity_visual_appeal*100)<70?
                   'text-yellow-600':'text-green-600'}`}>{(outputData?.scoring?.creativity_visual_appeal
-/inputData?.scoring_criteria?.creativity_visual_appeal*100).toFixed(1)}</span>
+/inputData?.scoring_criteria?.creativity_visual_appeal*100).toFixed(1)}</span>):(<img 
+  className='w-6 h-6'
+  src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">Visual Appeal</span>
             </div>
@@ -104,13 +144,15 @@ const Dashboard = () => {
               className={` ${(outputData?.scoring?.call_to_action/inputData?.scoring_criteria?.call_to_action*100)<30?'bg-red-100':
                 (outputData?.scoring?.call_to_action/inputData?.scoring_criteria?.call_to_action*100)<70?
                 'bg-yellow-100':'bg-green-100'} w-12 h-12 bg-green-100 rounded-full flex items-center justify-center`}>
-                <span className={`${(outputData?.scoring?.call_to_action/inputData?.scoring_criteria?.call_to_action*100)<30?'text-red-600':
+                {outputData.video_url? (<span className={`${(outputData?.scoring?.call_to_action/inputData?.scoring_criteria?.call_to_action*100)<30?'text-red-600':
                   (outputData?.scoring?.call_to_action/inputData?.scoring_criteria?.call_to_action*100)<70?
                   'text-yellow-600':'text-green-600'}`}>
                     {(outputData?.scoring?.call_to_action
 /inputData?.scoring_criteria?.call_to_action*100).toFixed(1)}
 
-                  </span>
+                  </span>):(<img 
+className='w-6 h-6'
+src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">Call To Action</span>
             </div>
@@ -121,10 +163,12 @@ const Dashboard = () => {
                 (outputData?.scoring?.audience_relevance/inputData?.scoring_criteria?.audience_relevance*100)<70?
                 'bg-yellow-100':'bg-green-100'}
               w-12 h-12 bg-green-100 rounded-full flex items-center justify-center`}>
-                <span className={`${(outputData?.scoring?.audience_relevance/inputData?.scoring_criteria?.audience_relevance*100)<30?'text-red-600':
+                {outputData.video_url? (<span className={`${(outputData?.scoring?.audience_relevance/inputData?.scoring_criteria?.audience_relevance*100)<30?'text-red-600':
                   (outputData?.scoring?.audience_relevance/inputData?.scoring_criteria?.audience_relevance*100)<70?
                   'text-yellow-600':'text-green-600'}`}>{(outputData?.scoring?.audience_relevance
-/inputData?.scoring_criteria?.audience_relevance*100).toFixed(1)}</span>
+/inputData?.scoring_criteria?.audience_relevance*100).toFixed(1)}</span>):(<img 
+  className='w-6 h-6'
+  src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">Audience Relevance</span>
             </div>
@@ -134,20 +178,27 @@ const Dashboard = () => {
               className={`${(outputData?.scoring?.brand_guideline_adherence/inputData?.scoring_criteria?.brand_guideline_adherence*100)<30?'bg-red-100':
                 (outputData?.scoring?.brand_guideline_adherence/inputData?.scoring_criteria?.brand_guideline_adherence*100)<70?
                 'bg-yellow-100':'bg-green-100'} w-12 h-12 bg-green-100 rounded-full flex items-center justify-center`}>
-                <span className={`${(outputData?.scoring?.brand_guideline_adherence/inputData?.scoring_criteria?.brand_guideline_adherence*100)<30?'text-red-600':
+
+                {outputData.video_url? (<span className={`${(outputData?.scoring?.brand_guideline_adherence/inputData?.scoring_criteria?.brand_guideline_adherence*100)<30?'text-red-600':
                   (outputData?.scoring?.brand_guideline_adherence/inputData?.scoring_criteria?.brand_guideline_adherence*100)<70?
-                  'text-yellow-600':'text-green-600'}`}>{(outputData?.scoring?.brand_guideline_adherence
-/inputData?.scoring_criteria?.brand_guideline_adherence*100).toFixed(1)}</span>
+                  'text-yellow-600':'text-green-600'}`}>{((outputData?.scoring?.brand_guideline_adherence
+/inputData?.scoring_criteria?.brand_guideline_adherence*100).toFixed(1))}</span>):
+(<img 
+className='w-6 h-6'
+src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">Brand Adherence</span>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-600">{outputData?.scoring?.total_score}</span>
+               {outputData.video_url? (<span className="text-green-600">{outputData?.scoring?.total_score}</span>):(<img 
+className='w-6 h-6'
+src="https://media.tenor.com/2fE4s1GXDNEAAAAj/loading.gif"></img>)}
               </div>
               <span className="text-sm text-white mt-2">Total Score</span>
             </div>
           </div>
+          {outputData.video_url && (<p className='text-xl absolute bottom-10 right-5  text-white'>Total Time Taken : {(count/60).toFixed(2)} mintues </p>)}
         </div>
       </div>
       {visible && (

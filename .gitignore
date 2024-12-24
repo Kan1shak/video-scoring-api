@@ -17,7 +17,6 @@ notebooks/
 tmp/
 temp_*/
 uploads/
-*.mp4
 *.avi
 logs/
 *.log

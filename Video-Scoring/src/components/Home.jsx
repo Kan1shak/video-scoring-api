@@ -4,11 +4,19 @@ import { Link } from "react-router-dom";
 
 const videos = [
   "Final_vedio0001-0579.mp4",
-  "Final_vedio0001-0579.mp4",
-  "Final_vedio0001-0579.mp4",
-  "Final_vedio0001-0579.mp4",
-  "Final_vedio0001-0579.mp4"
+  "WhatsApp Video 2024-12-23 at 05.14.05.mp4",
+  "WhatsApp Video 2024-12-22 at 21.55.20.mp4",
+  "WhatsApp Video 2024-12-22 at 21.38.54.mp4",
+  "WhatsApp Video 2024-12-23 at 21.27.44.mp4",
+  "WhatsApp Video 2024-12-23 at 21.27.45.mp4"
 ];
+
+const videos2 =[
+  "https://res.cloudinary.com/dzz1r3hcf/video/upload/v1734982012/xqiavzhjbiuthhts5pvq.mp4",
+  "https://res.cloudinary.com/dzz1r3hcf/video/upload/v1734983257/nn2mzuseujljoke5vmgn.mp4",
+  "https://res.cloudinary.com/dzz1r3hcf/video/upload/v1734977696/ih9toaqwvj8im6rh6mp4.mp4"
+
+]
 
 const HomePage = () => {
   const { inputData,outputData,updateInputData,updateOutputData } = useSharedContext();
@@ -53,6 +61,7 @@ const HomePage = () => {
     });
 
     if (!response.ok) {
+      alert("request failed, Please Try Again!")
       throw new Error(`Error: ${response.statusText}`);
     }
 
@@ -61,6 +70,7 @@ const HomePage = () => {
     updateOutputData(data)
     console.log('Output Data:', outputData);
   } catch (error) {
+    alert("request failed, Please Try Again!")
     console.error('Request failed:', error);
   }
 }
@@ -108,7 +118,9 @@ const HomePage = () => {
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-6 border-2 border-gray-800 rounded-full"></div>
       </div>
-      <div className="flex bg-[url('pexels-fwstudio-33348-129733.jpg')] items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
+      <div 
+      style={{backgroundImage:"url('pexels-fwstudio-33348-172276.jpg')"}}
+      className="flex items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold uppercase">Generate</h1>
     </div>
       </div>
@@ -118,7 +130,9 @@ const HomePage = () => {
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-6 border-2 border-gray-800 rounded-full"></div>
       </div>
-      <div className="flex bg-[url('pexels-fwstudio-33348-172276.jpg')] items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
+      <div 
+      style={{backgroundImage:"url('pexels-fwstudio-33348-163999.jpg')"}}
+      className="flex transform -rotate-12 items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold uppercase">Your</h1>
     </div>
       </div>
@@ -128,7 +142,9 @@ const HomePage = () => {
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-6 border-2 border-gray-800 rounded-full"></div>
       </div>
-      <div className="flex bg-[url('pexels-fwstudio-33348-163999.jpg')] items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
+      <div 
+      style={{backgroundImage:"url('pexels-fwstudio-33348-132193.jpg')"}}
+      className="flex  items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold uppercase">Own</h1>
     </div>
       </div>
@@ -138,7 +154,9 @@ const HomePage = () => {
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-6 border-2 border-gray-800 rounded-full"></div>
       </div>
-      <div className="flex bg-[url('pexels-fwstudio-33348-129723.jpg')] transform rotate-12 items-center justify-center h-40 w-48 text-black rounded-lg shadow-lg">
+      <div 
+      style={{backgroundImage:"url('pexels-fwstudio-33348-129723.jpg')"}}
+      className="flex  transform rotate-12 items-center justify-center h-40 w-48 text-black rounded-lg shadow-lg">
       <h1 className="text-2xl mix-blend-multiply font-semibold uppercase">Product</h1>
     </div>
       </div>
@@ -148,16 +166,18 @@ const HomePage = () => {
         </div>
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-6 border-2 border-gray-800 rounded-full"></div>
       </div>
-      <div className="flex bg-[url('pexels-fwstudio-33348-132193.jpg')] items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
+      <div 
+      style={{backgroundImage:"url('pexels-fwstudio-33348-129733.jpg')"}}
+      className="flex items-center justify-center h-40 w-48 text-white rounded-lg shadow-lg">
       <h1 className="text-2xl font-bold uppercase">Ad</h1>
     </div>
       </div>
     </div>
-    <div className="flex mb-8 w-screen h-screen gap-28 flex-col">
+    <div className="flex mt-20 m-8 w-screen h-screen gap-28 flex-col">
     <div className="overflow-hidden relative w-full  h-full bg-transparent">
       <div className="flex w-[calc(300px*3)] gap-16 animate-scroll">
         {videos.concat(videos).map((video, index) => (
-          <div key={index} className="w-[400px] flex-shrink-0 ">
+          <div key={index} className="w-[400px] h-[200px] flex-shrink-0 ">
             <video
               src={video}
               className="w-full rounded-xl h-full object-cover"
@@ -171,8 +191,8 @@ const HomePage = () => {
     </div>
     <div className="overflow-hidden relative w-full h-full bg-transparent">
       <div className="flex justify-center w-[calc(300px*3)] gap-16 animate-reverse">
-        {videos.concat(videos).map((video, index) => (
-          <div key={index} className="w-[400px] flex-shrink-0 ">
+        {videos2.concat(videos2).map((video, index) => (
+          <div key={index} className="w-[400px] h-[200px] flex-shrink-0 ">
             <video
               src={video}
               className="w-full rounded-xl h-full object-cover"
