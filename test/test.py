@@ -4,7 +4,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 
 from src.services.video_scorer import VideoScorer
-from src.models.schemas import VideoRequest, VideoDetails, Dimensions, ScoringCriteria
+from src.models.schemas import VideoRequest, VideoDetails, Dimensions
 
 # video_request = VideoRequest(
 #     video_details=VideoDetails(
@@ -38,15 +38,26 @@ video_request = VideoRequest(
         logo_url="https://i.postimg.cc/XvSdfv18/logo2.png",
         product_video_url="https://example.com/video.mp4"
     ),
-    scoring_criteria=ScoringCriteria(
-        background_foreground_separation=20,
-        brand_guideline_adherence=20,
-        creativity_visual_appeal=20,
-        product_focus=15,
-        call_to_action=15,
-        audience_relevance=10
+    scoring_criteria = {
+        "background_foreground_separation": "20",
+        "brand_guideline_adherence": "20",    
+        "creativity_visual_appeal": "20",
+        "product_focus": "15",
+        "call_to_action": "15",
+        "audience_relevance": "10",
+        "trendyness": "5"
+    }
+    # =ScoringCriteria(
+    #     background_foreground_separation=20,
+    #     brand_guideline_adherence=20,
+    #     creativity_visual_appeal=20,
+    #     product_focus=15,
+    #     call_to_action=15,
+    #     audience_relevance=10
+        
     )
-)
 
-scorer = VideoScorer(video_request)
-response = scorer.score_video("data/less_bg_fg_separation.mp4")
+scorer = VideoScorer(video_request,"data/less_bg_fg_separation.mp4")
+response = scorer.score_video()
+
+print(response)

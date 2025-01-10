@@ -1,3 +1,4 @@
+import typing
 from typing import List
 import requests
 import os
@@ -140,3 +141,22 @@ def add_watermark(video_path:str, logo_path:str, output_path:str) -> None:
     
     video.close()
     final_video.close()
+
+def create_dynamic_scoring_td(criteria_names: list[str]):
+    justification_fields = {
+        criterion: str for criterion in criteria_names
+    }
+    DynamicJustifications = typing.TypedDict('Justifications', justification_fields)
+    
+    # Create Scoring TypedDict
+    scoring_fields = {
+        criterion: float for criterion in criteria_names
+    }
+    scoring_fields.update({
+        'total_score': float,
+        'justifications': DynamicJustifications
+    })
+    
+    DynamicScoringDict = typing.TypedDict('ScoringTypedDict', scoring_fields)
+    
+    return DynamicScoringDict
