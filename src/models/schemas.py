@@ -18,7 +18,7 @@ class VideoDetails(BaseModel):
 
 class VideoRequest(BaseModel):
     video_details: VideoDetails
-    scoring_criteria: Dict[str, str]
+    scoring_criteria: Dict[str, int]
 
 class Resolution(BaseModel):
     width: int
@@ -48,9 +48,5 @@ class VideoResponse(BaseModel):
 
 class VideoGenerationPrompts(BaseModel):
     hero_prompt: str
-    segment_one_keyframe: str
-    segment_one_motion: str
-    segment_two_keyframe: str
-    segment_two_motion: str
-    segment_three_keyframe: str
-    segment_three_motion: str
+    keyframe_prompt: str
+    motion_prompt: str

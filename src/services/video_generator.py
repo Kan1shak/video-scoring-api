@@ -1,10 +1,12 @@
 import json
-from typing import Dict
+import math
+from typing import Dict, List
 import fal_client
 import google.generativeai as genai
 from ..models.schemas import VideoRequest, VideoGenerationPrompts
 from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
 from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video, add_watermark
+from PIL import ImageColor
 
 def on_queue_update(update):
     if isinstance(update, fal_client.InProgress):
@@ -19,10 +21,10 @@ class VideoGenerator:
                         generation_config=gemini_generation_config,
                         safety_settings=safety_settings,
                         system_instruction=
-f"""# Creative Director's Brief: High-Scoring 15-Second Advertisement Generation
+f"""# Creative Director's Brief: Sequential Advertisement Generation
 
 ## Your Role
-You are a meticulous creative director at a premium animation studio. Your goal is to create advertisements that will score the maximum possible points on our detailed scoring rubric (total: 100 points).
+You are a meticulous creative director at a premium animation studio. Your goal is to create advertisements that will score the maximum possible points on our detailed scoring rubric (total: 100 points). You will work iteratively with the production team, writing prompts for one segment at a time after reviewing previous segments.
 
 ## Color Translation Rule (IMPORTANT!)
 Before starting any creative work, you must convert all hexadecimal color codes in the brand palette into descriptive color names. For example:
@@ -78,54 +80,64 @@ To score 10/10:
 - Keep pacing dynamic but not overwhelming
 - Include subtle cultural references relevant to the age group
 
-## Required Outputs
+## Sequential Process
 
-### 1. Initial Product Shot
-First, create a clean, striking product visualization:
-- Describe the exact camera angle
-- Detail the lighting setup
-- Specify any product-specific highlights
-- Keep the background minimal but impactful
+### Initial Submission
+For your first submission, provide:
 
-### 2. 15-Second Breakdown
-Divide into three 5-second segments. For each segment provide:
-
-#### A. Keyframe Description
-- Composition details
-- Color implementation (using converted color names)
-- Lighting setup
-- Key visual elements
-- Style approach
-- Emotional impact
-
-#### B. Motion Sequence
-- Transition mechanics
-- Element movements
-- Camera behavior
-- Timing relationships
-- Sound design suggestions
-
-## Critical Rule: Stateless Prompts
-Each prompt MUST be completely independent and self-contained. Think of each prompt as being processed by a separate system that has NO KNOWLEDGE of any other prompts you've written. This means:
-
-1. NEVER reference previous prompts
-   - Wrong: "The bottle continues rotating"
-   - Right: "A glass bottle rotates clockwise, displaying all sides"
-
-2. NEVER use contextual words
-   - Wrong: "then", "next", "previously", "continues", "same as before"
-   - Right: New, complete description for each prompt
-
-3. NEVER assume inherited properties
-   - Wrong: "with the same lighting setup"
-   - Right: Fully describe lighting in each prompt
-
-4. ALWAYS restate critical elements
-   - Product details
-   - Brand colors
-   - Key visual elements
-   - Camera positioning
+1. Product Shot Description:
+   - Exact camera angle
    - Lighting setup
+   - Product-specific highlights
+   - Minimal but impactful background
+
+2. First 5-Second Segment:
+   #### A. Keyframe Description
+   - Composition details
+   - Color implementation (using converted color names)
+   - Lighting setup
+   - Key visual elements
+   - Style approach
+   - Emotional impact
+
+   #### B. Motion Sequence
+   - Transition mechanics
+   - Element movements
+   - Camera behavior
+   - Timing relationships
+   - Sound design suggestions
+
+### Subsequent Segments
+After each 5-second segment is produced, you will receive:
+1. The completed video segment
+2. A high-quality still frame of the final frame
+3. Any specific requirements for the next segment
+
+Based on these, you will provide prompts for the next 5-second segment following the same Keyframe Description and Motion Sequence format as above.
+
+## Critical Rule: Self-Contained Prompts
+Each prompt must be completely self-contained while naturally continuing from the visual elements present in the last frame. This means:
+
+1. DO describe what you see and how it transforms
+   - Wrong: "Building from the previous scene..."
+   - Right: "Fine grains of sand beneath the crystal bottle rise upward, gradually enveloping the glass surface"
+
+2. DO specify all technical details
+   - Lighting
+   - Camera positioning
+   - Color usage
+   - Visual effects
+
+3. DO maintain brand consistency
+   - Color palette
+   - Visual style
+   - Motion language
+
+4. DON'T use referential language
+   - Wrong: "the previous bottle position"
+   - Wrong: "continuing from the last frame"
+   - Wrong: "the existing sand pattern"
+   - Right: "the bottle, standing upright on a bed of golden sand"
 
 ## Writing Rules
 
@@ -133,9 +145,9 @@ Each prompt MUST be completely independent and self-contained. Think of each pro
 - Use present tense descriptions
 - Be specific about visual elements
 - Enclose all text in quotations ("")
-- Make each prompt self-contained
 - Reference converted color names
 - Focus on achieving maximum rubric scores
+- Consider the previous segment's final state
 
 ### DON'T:
 - Use instructional language ("create", "make", "start")
@@ -143,36 +155,10 @@ Each prompt MUST be completely independent and self-contained. Think of each pro
 - Forget about brand colors
 - Ignore any rubric criteria
 - Write overly long descriptions
-- Assume knowledge from previous prompts
 
 ## Example Format:
 
-### BAD Example (Breaking Stateless Rule):
-```
-[Segment 1]
-A bottle appears from particles against a dark background
-
-[Segment 2]
-The same bottle continues rotating while the background transitions to blue
-
-[Segment 3]
-Finally, the bottle stops spinning and the logo appears next to it
-```
-
-### GOOD Example (Stateless Prompts):
-```
-[Segment 1]
-A crystal glass bottle materializes from swirling particles, centered in frame against a deep navy background, warm spotlights highlighting the label, camera positioned at product height
-
-[Segment 2]
-A crystal glass bottle rotates 180 degrees against a gradient blue background, three-point lighting setup emphasizes product texture, camera slightly below product level
-
-[Segment 3]
-A crystal glass bottle stands upright, brand logo floats independently in golden light beside it, dramatic side lighting creates product shadows, camera at 15-degree upward angle
-```
-
-### Complete Format Example:
-
+### Initial Submission Example:
 ```
 [Color Conversion]
 Original palette: #FF5733, #33FF57, #5733FF
@@ -181,12 +167,21 @@ Converted names: "warm coral", "vibrant lime", "royal purple"
 [Product Shot]
 Crystal-clear bottle floating in warm coral gradient space, rim lighting defining edges, royal purple accents creating depth, 8k product photography
 
-[Segment 1: 0-5s]
+[First Segment: 0-5s]
 Keyframe:
 Minimalist vibrant lime background, product centered, volumetric lighting casting subtle shadows, golden ratio composition
 
 Motion:
 Particles of royal purple light coalesce into product shape, camera smoothly arcs 180 degrees, depth of field shift reveals product detail
+```
+
+### Subsequent Segment Example (After Receiving Last Frame):
+```
+[Keyframe]
+Glass bottle centered on minimalist surface, royal purple crystalline structures emerge from below, warm coral gradient backdrop fills space. Three-point lighting setup casts elegant shadows, highlighting bottle's transparent surface and label details. Shallow depth of field maintains focus on bottle while softly blurring background elements.
+
+[Motion]
+The crystalline formations grow upward with geometric precision, their faceted surfaces reflecting rim light. Camera maintains static position as formations reach bottle midpoint. Background gradient shifts from warm coral to vibrant lime through slow center-out dissolve.
 ```
 
 Remember: Each element you describe must contribute to achieving maximum points in the scoring rubric. Think of the rubric as your creative brief - every decision should align with these scoring criteria.
@@ -202,7 +197,7 @@ Remember: Each element you describe must contribute to achieving maximum points 
                 "response_schema": VideoGenerationPrompts
             },
             safety_settings=safety_settings,
-            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response."
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field."
         )
     def generate_video(self) -> tuple[str, str]:
         # if the request is for EcoVive Bottle, we will just provide the video we created manually
@@ -236,27 +231,28 @@ Remember: Each element you describe must contribute to achieving maximum points 
 
         # create the input text
         video_request_dict = self.video_request.model_dump()
+        duration = video_request_dict['video_details']['duration']
+
+        total_segments = math.ceil(duration/5)
         input_text = f"""
 product_name: {video_request_dict['video_details']['product_name']}
 tagline: {video_request_dict['video_details']['tagline']}
 brand_palette: {video_request_dict['video_details']['brand_palette']}
 cta_text: {video_request_dict['video_details']['cta_text']}
+total_segments: {total_segments}
 The product video and logo have been attached for reference.
-Some more things you should focus into:
-○ Background and Foreground Separation:
-	■ Clear and visually distinct separation.
-○ Adherence to Brand Guidelines:
-	■ Consistency in using brand colors, fonts, and logo.
-○ Creativity and Visual Appeal:
-	■ Engaging storytelling, transitions, and animations.
-○ Product Focus:
-	■ Prominence of the product throughout the video.
-○ Call-to-Action:
-	■ Visibility and placement of the CTA.
-○ Audience Relevance:
-	■ Appeal to the target audience's values and preferences.
-"""
-        
+"""     
+        colors = video_request_dict['video_details']['brand_palette']
+        colors_list = [
+            {
+                "r": int(ImageColor.getcolor(color, "RGB")[0]),
+                "g": int(ImageColor.getcolor(color, "RGB")[1]),
+                "b": int(ImageColor.getcolor(color, "RGB")[2])
+            }
+            for color in colors
+        ]
+        video_paths = [f"segment_{i}.mp4" for i in range(total_segments)]
+
         # start chat session
         chat_sess = self.llm.start_chat(
             history=[
@@ -276,24 +272,54 @@ Some more things you should focus into:
         )
         response = chat_sess.send_message(input_text).text
         print(f"{response=}")
-        # get the prompts in json format
+        # get the first prompt in json format
         prompts = json.loads(self.llm_json_writer.generate_content(response).text)
         print(f"{prompts=}")
 
         # get the first frame
-        first_frame_url = self.get_first_frame(prompts)
+        first_frame_url = self.get_first_frame(prompts,colors_list)
         
-        # generating the segments
-        video_paths = ["segment_1.mp4", "segment_2.mp4", "segment_3.mp4"]
+
         # generate the first segment
-        last_frame_url = self.generate_segment(prompts["segment_one_motion"], first_frame_url, video_paths[0])
-        # generate the second segment
-        last_frame_url = self.generate_segment(prompts["segment_two_motion"], last_frame_url, video_paths[1])
-        # generate the last segment
-        _ = self.generate_segment(prompts["segment_three_motion"], last_frame_url, video_paths[2])
+        last_frame_url = self.generate_segment(prompts["motion_prompt"], first_frame_url, video_paths[0])
+
+        # now we loop throught the next segments
+        for i in range(1, total_segments):
+            
+            # download the last frame of the previous segment
+            last_frame = download_file(last_frame_url, "last_frame.png")
+            # upload the last frame of the previous segment and the video
+            files = [
+                upload_to_gemini(last_frame),
+                upload_to_gemini(f"tmp/{video_paths[i-1]}")
+            ]
+
+            wait_for_files_active(files)
+
+            chat_sess.history.append(
+                {
+                    "role": "user",
+                    "parts": [
+                        files[0],
+                    ],
+                }
+            )
+            chat_sess.history.append(
+                                {
+                    "role": "user",
+                    "parts": [
+                        files[1],
+                    ],
+                }
+            )
+            input_text = f"Now write the prompt for the next segment no. {i+1}"
+            response = chat_sess.send_message(input_text).text
+            print(f"segment_{i+1}_response={response}")
+            prompts = json.loads(self.llm_json_writer.generate_content(response).text)
+            print(f"segment_{i+1}_prompts={prompts}")
+            last_frame_url = self.generate_segment(prompts["motion_prompt"], last_frame_url, f"{video_paths[i]}")
 
         # combine the segments
-        video_paths = ["segment_1.mp4", "segment_2.mp4", "segment_3.mp4"]
         video_paths = ["tmp/"+path for path in video_paths]
         output_path = "data/merged_output.mp4"
         merge_videos(video_paths, output_path)
@@ -305,15 +331,15 @@ Some more things you should focus into:
 
         return output_path_w, output_url
     
-    def get_first_frame(self,prompts:Dict) -> str:
+    def get_first_frame(self,prompts:Dict,colors:List) -> str:
         try:
             result = fal_client.subscribe(
-                "fal-ai/ideogram/v2",
+                "fal-ai/recraft-v3",
                 arguments={
-                    "prompt": prompts["segment_one_keyframe"],
-                    "aspect_ratio": "16:9",
-                    "expand_prompt": False,
-                    "style": "render_3D"
+                    "prompt": prompts["keyframe_prompt"],
+                    "image_size": "landscape_16_9",
+                    "style": "realistic_image/studio_portrait",
+                    "colors": colors
                 },
                 with_logs=True,
                 on_queue_update=on_queue_update,
@@ -328,11 +354,11 @@ Some more things you should focus into:
         """generate a 5 seconds long segment, these take ~220 seconds each to generate"""
         try:
             result = fal_client.subscribe(
-                "fal-ai/minimax/video-01-live/image-to-video",
+                "fal-ai/kling-video/v1.6/standard/image-to-video",
                 arguments={
                     "prompt":prompt,
                     "image_url": image_url,
-                    "prompt_optimizer": True
+                    # "prompt_optimizer": True
                 },
                 with_logs=True,
                 on_queue_update=on_queue_update,
