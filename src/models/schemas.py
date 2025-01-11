@@ -1,7 +1,6 @@
 from pydantic import BaseModel, HttpUrl
 from typing import List, Dict
 import typing_extensions as typing
-
 class Dimensions(BaseModel):
     width: int
     height: int
@@ -19,6 +18,7 @@ class VideoDetails(BaseModel):
 class VideoRequest(BaseModel):
     video_details: VideoDetails
     scoring_criteria: Dict[str, int]
+    additional_guidelines: str
 
 class Resolution(BaseModel):
     width: int
@@ -50,3 +50,25 @@ class VideoGenerationPrompts(BaseModel):
     hero_prompt: str
     keyframe_prompt: str
     motion_prompt: str
+
+class TextDuration(typing.TypedDict):
+    start: float
+    end: float
+
+class TextPosition(typing.TypedDict):
+    x: float
+    y: float
+
+class TextAnimation(typing.TypedDict):
+    animation_type: str
+    animation_extra_info: str
+
+class TextOverlay(typing.TypedDict):
+    text: str
+    text_duration: TextDuration
+    position: TextPosition
+    font_size: str # small, medium, large
+    text_animation: TextAnimation
+
+class TextOverlays(typing.TypedDict):
+    texts: List[TextOverlay]

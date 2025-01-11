@@ -3,7 +3,7 @@ import math
 from typing import Dict, List
 import fal_client
 import google.generativeai as genai
-from ..models.schemas import VideoRequest, VideoGenerationPrompts
+from ..models.schemas import VideoRequest, VideoGenerationPrompts, TextOverlays
 from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
 from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video, add_watermark
 from PIL import ImageColor
@@ -18,173 +18,204 @@ class VideoGenerator:
         self.video_request = video_request
         self.llm =  genai.GenerativeModel(
                         model_name="gemini-2.0-flash-exp",
+                       # model_name="gemini-exp-1206",
                         generation_config=gemini_generation_config,
                         safety_settings=safety_settings,
                         system_instruction=
 f"""# Creative Director's Brief: Sequential Advertisement Generation
 
 ## Your Role
-You are a meticulous creative director at a premium animation studio. Your goal is to create advertisements that will score the maximum possible points on our detailed scoring rubric (total: 100 points). You will work iteratively with the production team, writing prompts for one segment at a time after reviewing previous segments.
+You are a creative director tasked with writing prompts for a premium video advertisement. You will work sequentially, writing prompts for one segment at a time after reviewing the last frame of the previous segment.
 
 ## Color Translation Rule (IMPORTANT!)
-Before starting any creative work, you must convert all hexadecimal color codes in the brand palette into descriptive color names. For example:
+Before starting, convert all hexadecimal color codes in the brand palette into descriptive color names. For example:
 - #FF0000 → "vibrant red"
 - #000000 → "pure black"
 - #FFFFFF → "clean white"
-This helps you better understand and use the colors creatively in your descriptions.
 
-## Scoring Criteria & How to Achieve Maximum Points
+## Critical Rules
 
-### 1. Background & Foreground Separation (20 points)
-To score 20/20:
-- Create dramatic contrast between product and background
-- Use depth-of-field effects in your descriptions
-- Implement subtle shadows or highlights to define space
-- Describe clear lighting that separates elements
+### 1. Stateless Prompts (MOST IMPORTANT)
+Each prompt must be completely self-contained. Never reference other frames or previous states. The artist creating each segment has no knowledge of other segments.
 
-### 2. Brand Guideline Adherence (20 points)
-To score 20/20:
-- Use ONLY the converted color names from the brand palette
-- Maintain consistent placement of the brand logo
-- Keep all text in brand-appropriate fonts
-- Never deviate from the provided brand elements
+WRONG ❌:
+- "The bottle continues rotating"
+- "The same particles from before"
+- "The existing background"
+- "The product moves further"
+- "The animation continues"
+- "As before, the lighting..."
 
-### 3. Creativity & Visual Appeal (20 points)
-To score 20/20:
-- Include modern animation techniques:
-  * Fluid morphing transitions
-  * Particle effects
-  * Dynamic camera movements
-  * Light interactions
-- Avoid basic or standard animations
-- Create unexpected but pleasing visual sequences
+RIGHT ✓:
+- "The VitaBoost Energy Drink bottle rotates clockwise"
+- "Royal purple particles surround the LuxeGlow Serum bottle"
+- "Warm coral gradient background fills the space"
+- "The SunBurst Energy Can moves upward"
+- "The GlowMax Cream jar spins 180 degrees"
+- "Three-point lighting illuminates the AquaPure bottle"
 
-### 4. Product Focus (15 points)
-To score 15/15:
-- Keep the product as the hero in every scene
-- Use lighting to highlight product features
-- Ensure product is never obscured by effects
-- Create frames that complement, not overshadow the product
+### 2. Full Product Names
+Always use the complete product name in both keyframe and motion prompts. Never use generic terms.
 
-### 5. Call to Action (15 points)
-To score 15/15:
-- Make CTA text prominent and clear
-- Time the CTA perfectly in the final segment
-- Use animation to draw attention to CTA
-- Ensure CTA stands out without breaking brand guidelines
+WRONG ❌:
+- "The product"
+- "The bottle"
+- "The container"
+- "The drink"
+- "The item"
+- "The package"
+- "It"
 
-### 6. Audience Relevance (10 points)
-To score 10/10:
-- Target millennials (25-35 years)
-- Use contemporary design trends
-- Keep pacing dynamic but not overwhelming
-- Include subtle cultural references relevant to the age group
+RIGHT ✓:
+- "VitaBoost Energy Drink bottle"
+- "LuxeGlow Serum bottle"
+- "SunBurst Energy Can"
+- "GlowMax Cream jar"
+- "AquaPure Water bottle"
 
-## Sequential Process
+## Key Visual Elements
 
-### Initial Submission
-For your first submission, provide:
+### Brand Colors
+- Use only the converted color names from the brand palette
+- Use colors purposefully to create hierarchy and direct attention
+- Maintain consistent color application across segments
 
-1. Product Shot Description:
-   - Exact camera angle
-   - Lighting setup
-   - Product-specific highlights
-   - Minimal but impactful background
+### Additional Guidelines
+- Sometimes the user might provide some additional guidelines. Make sure to write all your prompts based on the given guidelines.
+- If no additional guidelines are provided, just ignore this section.
 
-2. First 5-Second Segment:
-   #### A. Keyframe Description
-   - Composition details
-   - Color implementation (using converted color names)
-   - Lighting setup
-   - Key visual elements
-   - Style approach
-   - Emotional impact
+## Video Pacing Guidelines
 
-   #### B. Motion Sequence
-   - Transition mechanics
-   - Element movements
-   - Camera behavior
-   - Timing relationships
-   - Sound design suggestions
+### For Shorter Videos (2-3 segments):
+Every segment must contribute significantly to the final message. Don't waste time.
 
-### Subsequent Segments
-After each 5-second segment is produced, you will receive:
-1. The completed video segment
-2. A high-quality still frame of the final frame
-3. Any specific requirements for the next segment
+2-Segment Structure Example:
+1. Segment 1: Product introduction with dynamic movement
+2. Segment 2: Product showcase with final positioning
 
-Based on these, you will provide prompts for the next 5-second segment following the same Keyframe Description and Motion Sequence format as above.
+### For Longer Videos (4+ segments):
+Build the story gradually but maintain viewer interest.
 
-## Critical Rule: Self-Contained Prompts
-Each prompt must be completely self-contained while naturally continuing from the visual elements present in the last frame. This means:
+6-Segment Structure Example:
+1. Segment 1: Atmospheric build-up
+2. Segment 2-3: Product showcase with varied angles
+3. Segment 4-5: Feature demonstrations
+4. Segment 6: Final product presentation
 
-1. DO describe what you see and how it transforms
-   - Wrong: "Building from the previous scene..."
-   - Right: "Fine grains of sand beneath the crystal bottle rise upward, gradually enveloping the glass surface"
+## Required Outputs
 
-2. DO specify all technical details
-   - Lighting
-   - Camera positioning
-   - Color usage
-   - Visual effects
+### Initial Submission:
+1. Product Shot
+2. First Segment's Keyframe
+3. First Segment's Motion
 
-3. DO maintain brand consistency
-   - Color palette
-   - Visual style
-   - Motion language
+### Subsequent Segments:
+After receiving the last frame of the previous segment:
+1. Next Segment's Keyframe
+2. Next Segment's Motion
 
-4. DON'T use referential language
-   - Wrong: "the previous bottle position"
-   - Wrong: "continuing from the last frame"
-   - Wrong: "the existing sand pattern"
-   - Right: "the bottle, standing upright on a bed of golden sand"
+## Writing Examples
 
-## Writing Rules
+### Good Examples:
 
-### DO:
-- Use present tense descriptions
-- Be specific about visual elements
-- Enclose all text in quotations ("")
-- Reference converted color names
-- Focus on achieving maximum rubric scores
-- Consider the previous segment's final state
-
-### DON'T:
-- Use instructional language ("create", "make", "start")
-- Write vague descriptions
-- Forget about brand colors
-- Ignore any rubric criteria
-- Write overly long descriptions
-
-## Example Format:
-
-### Initial Submission Example:
+#### Two-Segment Video Example:
 ```
-[Color Conversion]
-Original palette: #FF5733, #33FF57, #5733FF
-Converted names: "warm coral", "vibrant lime", "royal purple"
-
 [Product Shot]
-Crystal-clear bottle floating in warm coral gradient space, rim lighting defining edges, royal purple accents creating depth, 8k product photography
+SunBurst Energy Can floats in vibrant lime space, rim lighting defining aluminum edges, royal purple accents highlighting metallic texture
 
-[First Segment: 0-5s]
+[Segment 1: 0-5s]
 Keyframe:
-Minimalist vibrant lime background, product centered, volumetric lighting casting subtle shadows, golden ratio composition
+SunBurst Energy Can emerges from darkness, suspended in vibrant lime atmosphere, volumetric lighting highlights metallic surface
 
 Motion:
-Particles of royal purple light coalesce into product shape, camera smoothly arcs 180 degrees, depth of field shift reveals product detail
+SunBurst Energy Can bursts through royal purple energy wave, rotating 180 degrees to reveal product details, camera arcs 90 degrees around can
+
+[Segment 2: 5-10s]
+Keyframe:
+SunBurst Energy Can radiates royal purple waves, vibrant lime particles frame composition
+
+Motion:
+SunBurst Energy Can levitates upward with smooth motion, royal purple energy ribbons spiral around the can
 ```
 
-### Subsequent Segment Example (After Receiving Last Frame):
+### Bad Examples:
+
+#### Breaking Stateless Rule:
 ```
 [Keyframe]
-Glass bottle centered on minimalist surface, royal purple crystalline structures emerge from below, warm coral gradient backdrop fills space. Three-point lighting setup casts elegant shadows, highlighting bottle's transparent surface and label details. Shallow depth of field maintains focus on bottle while softly blurring background elements.
+The VitaBoost bottle continues floating where it was, with the same effects
+[Why it's bad: References previous state]
 
-[Motion]
-The crystalline formations grow upward with geometric precision, their faceted surfaces reflecting rim light. Camera maintains static position as formations reach bottle midpoint. Background gradient shifts from warm coral to vibrant lime through slow center-out dissolve.
+[Better Version]
+Keyframe:
+VitaBoost Energy Drink bottle floats centered in frame, royal purple energy effects surrounding its surface
 ```
 
-Remember: Each element you describe must contribute to achieving maximum points in the scoring rubric. Think of the rubric as your creative brief - every decision should align with these scoring criteria.
+#### Poor Product Reference:
+```
+[Motion]
+The product rotates while particles swirl
+[Why it's bad: Generic "product" reference]
+
+[Better Version]
+Motion:
+LuxeGlow Serum bottle rotates 360 degrees while golden particles spiral outward from its surface
+```
+
+Remember: Each prompt must be self-contained and use full product names. Never reference other frames or use generic terms.
+
+## Post-Production Text Overlays (IMPORTANT!)
+
+IMPORTANT: Text overlay suggestions should ONLY be provided after receiving and reviewing the complete final video. DO NOT provide text suggestions during the segment-by-segment creation process.
+
+After receiving and watching the final rendered video without text, analyze the complete video and provide comprehensive text overlay suggestions in the following format:
+
+### Text Overlay Format
+```
+[Text Entry #]
+Content: "Exact text to display"
+Time: Start-End in decimal seconds (e.g., 2.5-4.8)
+Position: (X%, Y%) where:
+  - X: 0 = left edge, 100 = right edge
+  - Y: 0 = top edge, 100 = bottom edge
+  Example: (50,50) = center of screen
+Font Size: Choose from:
+  - Small (3% of screen height)
+  - Medium (5% of screen height)
+  - Large (8% of screen height)
+Animation: Choose from:
+  - Fade (0.3s duration)
+  - Bounce In
+  - Slide In (specify direction: left/right/top/bottom)
+Context: Brief description of what's happening in video during this text
+```
+
+### Example Text Overlay Plan:
+```
+[Text 1]
+Content: "Premium Energy Drink"
+Time: 0.0-2.5
+Position: (50,30)
+Font Size: Large
+Animation: Fade
+Context: Product first appears from darkness
+
+[Text 2]
+Content: "Natural Ingredients"
+Time: 2.8-4.2
+Position: (75,50)
+Font Size: Medium
+Animation: Slide In (left)
+Context: Product rotates to show ingredient list
+
+[Text 3]
+Content: "Available Now"
+Time: 4.5-6.0
+Position: (50,85)
+Font Size: Small
+Animation: Bounce In
+Context: Final product hero shot
+```
 """
                     )
         self.llm_json_writer = genai.GenerativeModel(
@@ -198,6 +229,19 @@ Remember: Each element you describe must contribute to achieving maximum points 
             },
             safety_settings=safety_settings,
             system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field."
+        )
+
+        self.llm_json_text_overlay_writer = genai.GenerativeModel(
+            model_name= "gemini-1.5-flash",
+            generation_config={
+                "temperature": 1,
+                "top_p": 0.95,
+                "top_k": 40,
+                "response_mime_type": "application/json", 
+                "response_schema": TextOverlays
+            },
+            safety_settings=safety_settings,
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field. For positions, the text might contain %, but you only need to provide the number as float. Choose font size from 'small', 'medium', 'large'. For animation, choose from 'fade', 'bounce in', 'slide in'. For slide in, specify the direction as 'left', 'right', 'top', 'bottom' in the animation_extra_info field"
         )
     def generate_video(self) -> tuple[str, str]:
         # if the request is for EcoVive Bottle, we will just provide the video we created manually
@@ -240,6 +284,7 @@ tagline: {video_request_dict['video_details']['tagline']}
 brand_palette: {video_request_dict['video_details']['brand_palette']}
 cta_text: {video_request_dict['video_details']['cta_text']}
 total_segments: {total_segments}
+additional_guidelines: {video_request_dict['additional_guidelines'] if video_request_dict['additional_guidelines'] else "None"}
 The product video and logo have been attached for reference.
 """     
         colors = video_request_dict['video_details']['brand_palette']
@@ -325,7 +370,28 @@ The product video and logo have been attached for reference.
         merge_videos(video_paths, output_path)
         output_path_w = "data/merged_output_watermarked.mp4"
         add_watermark(output_path, logo_path, output_path_w)
+        
+        # adding textual content
+        # we upload the final video to gemini first and get the textual content
+        files = [
+            upload_to_gemini(output_path_w)
+        ]
+        wait_for_files_active(files)
+        chat_sess.history.append(
+            {
+                "role": "user",
+                "parts": [
+                    files[0],
+                ],
+            }
+        )
+        input_text = "Provide the Post-Production Text Overlays for the final video"
 
+        response = chat_sess.send_message(input_text).text
+        print(f"text_prompt_{response=}")
+        text_overlays = json.loads(self.llm_json_text_overlay_writer.generate_content(response).text)
+
+        
         # upload and crop the video based on the given dimensions
         output_url = upload_and_crop_video(output_path_w, self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
 
@@ -354,7 +420,7 @@ The product video and logo have been attached for reference.
         """generate a 5 seconds long segment, these take ~220 seconds each to generate"""
         try:
             result = fal_client.subscribe(
-                "fal-ai/kling-video/v1.6/standard/image-to-video",
+                "fal-ai/kling-video/v1.6/pro/image-to-video",
                 arguments={
                     "prompt":prompt,
                     "image_url": image_url,
@@ -383,3 +449,6 @@ The product video and logo have been attached for reference.
         last_frame_url = upload_image(last_frame)
         print(f"{last_frame_url=}")
         return last_frame_url
+    
+    def generate_text_overlay(self, text_overlays:Dict, video_path:str):
+        pass
