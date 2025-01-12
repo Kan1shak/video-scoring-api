@@ -1,9 +1,9 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, HTTPException
 from pathlib import Path
 import shutil
 import os
 
-from .models.schemas import VideoRequest, VideoResponse, Scoring, Metadata, Resolution
+from .models.schemas import VideoRequest, VideoResponse
 from .services.video_scorer import VideoScorer
 from .services.video_generator import VideoGenerator
 from .utils.helpers import get_video_metadata

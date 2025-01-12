@@ -1,16 +1,18 @@
-from typing import List
+import typing
+from typing import List, Tuple, Dict
 import requests
 import os
 import cv2
 import cloudinary 
 import cloudinary.uploader
 import cloudinary.api
+import colorsys
 import numpy as np
 from ..models.schemas import Metadata, Resolution
 from io import BytesIO
 from PIL import Image
-from moviepy.editor import VideoFileClip, concatenate_videoclips, ImageClip, CompositeVideoClip
-
+from moviepy import VideoFileClip, concatenate_videoclips, ImageClip, CompositeVideoClip,TextClip, VideoFileClip
+import moviepy.video.fx as vfx
 cloud_name = os.getenv('CLOUD_NAME')
 api_key = os.getenv('API_KEY')
 api_secret = os.getenv('API_SECRET')
@@ -121,14 +123,14 @@ def add_watermark(video_path:str, logo_path:str, output_path:str) -> None:
     logo = ImageClip(logo_path, transparent=True)
     
     logo_width = video.w // 8  # w is video width
-    logo = logo.resize(width=logo_width)  # maintains aspect ratio
-    logo = logo.set_opacity(0.7)
+    logo = logo.resized(width=logo_width)  # maintains aspect ratio
+    logo = logo.with_opacity(0.7)
     padding = 20
     x = video.w - logo.w - padding
     y = video.h - logo.h - padding
     
-    logo = logo.set_position((x, y))
-    logo = logo.set_duration(video.duration)
+    logo = logo.with_position((x, y))
+    logo = logo.with_duration(video.duration)
     
     final_video = CompositeVideoClip([video, logo])
     
@@ -140,3 +142,65 @@ def add_watermark(video_path:str, logo_path:str, output_path:str) -> None:
     
     video.close()
     final_video.close()
+
+def create_dynamic_scoring_td(criteria_names: list[str]):
+    justification_fields = {
+        criterion: str for criterion in criteria_names
+    }
+    DynamicJustifications = typing.TypedDict('Justifications', justification_fields)
+    
+    # Create Scoring TypedDict
+    scoring_fields = {
+        criterion: float for criterion in criteria_names
+    }
+    scoring_fields.update({
+        'total_score': float,
+        'justifications': DynamicJustifications
+    })
+    
+    DynamicScoringDict = typing.TypedDict('ScoringTypedDict', scoring_fields)
+    
+    return DynamicScoringDict
+
+def get_stroke_color(rgb:Tuple)->Tuple:
+    r, g, b = [x/255 for x in rgb]
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    new_l = max(0, l - 0.2)
+    new_r, new_g, new_b = colorsys.hls_to_rgb(h, new_l, s)
+    return tuple(round(x * 255) for x in (new_r, new_g, new_b))
+
+def fade_in_text(video_path:str, duration:Dict, content:str, size:str, position:Dict, color:str, font:str) -> None:
+    font_sizes = {
+        "small": 30,
+        "medium": 60,
+        "large": 100
+    }
+    #get rgb in tuple
+    colors = color.split("(")[1].split(")")[0].split(",")
+    color = tuple(map(int, colors))
+    total_duration = duration["end"] - duration["start"]
+    orignalClip = VideoFileClip(video_path)
+    width, height = orignalClip.size
+
+    size = size.strip().lower()
+    font = font.strip().lower()
+    fonts_dict = {
+        "normal": "resources/inter.ttf",
+        "bold": "resources/bebas.ttf",
+        "stylish": "resources/playfair.ttf"
+    }
+
+    txt_clip = TextClip(fonts_dict[font],content, margin=(10,10),font_size=font_sizes[size], color=color, method="label",stroke_color=get_stroke_color(color),stroke_width=2).with_duration(total_duration).with_start(duration["start"])
+    textclip_width, textclip_height = txt_clip.size
+
+    # calculate the position
+    x = max(width * position["x"]/100 - textclip_width/2, 0)
+    y = max(height * position["y"]/100 - textclip_height/2, 0)
+    fade_duration = 0.3
+    txt_clip = txt_clip.with_position((x, y)).with_effects([vfx.CrossFadeIn(fade_duration), vfx.CrossFadeOut(fade_duration)])
+    return txt_clip
+
+def embed_text_clips(video_path:str, text_clips:List[TextClip], output_path:str) -> None:
+    composite = CompositeVideoClip([VideoFileClip(video_path), *text_clips] )
+    composite.write_videofile(output_path, codec='libx264', audio_codec='aac')
+    composite.close()

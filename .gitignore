@@ -20,3 +20,4 @@ uploads/
 *.avi
 logs/
 *.log
+data/

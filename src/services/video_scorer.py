@@ -1,10 +1,11 @@
 import json
+from typing import Dict
 import google.generativeai as genai
 import os
 from fastapi import HTTPException
-from ..models.schemas import VideoRequest, VideoResponse, Scoring, ScoringTypedDict, Metadata, Resolution
+from ..models.schemas import VideoRequest
 from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
-from ..utils.helpers import download_file
+from ..utils.helpers import download_file, create_dynamic_scoring_td
 
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
@@ -34,6 +35,7 @@ Now based on the criteria, and the information provided, you need to:
 - Include jusitifications for each category in the scoring.
 """
                     )
+        scoring_criteria = list(video_request.scoring_criteria.keys())
         self.llm_json_writer = genai.GenerativeModel(
             model_name= "gemini-1.5-flash",
             generation_config={
@@ -41,12 +43,12 @@ Now based on the criteria, and the information provided, you need to:
                 "top_p": 0.95,
                 "top_k": 40,
                 "response_mime_type": "application/json", 
-                "response_schema": ScoringTypedDict
+                "response_schema": create_dynamic_scoring_td(scoring_criteria)
             },
             safety_settings=safety_settings,
             system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. For the jusitification part, provide brief summaries of each scoring criteria and how the video meets that criteria. For the scores, don't do any divisions to make it a percentage, just provide the raw scores."
         )
-    def score_video(self) -> VideoResponse:
+    def score_video(self) -> Dict:
         generated_video_path = os.path.abspath(self.generated_video_path)
         logo_url = self.video_request.video_details.logo_url
         logo_path = download_file(logo_url, "logo.png")
@@ -96,6 +98,5 @@ More info on Scording Criteria:
         response = chat_sess.send_message(input_text).text
         print(response)
         scoring = json.loads(self.llm_json_writer.generate_content(response).text)
-        scoring = Scoring(**scoring)
-        print(scoring.model_dump_json())
+        print(scoring)
         return scoring
