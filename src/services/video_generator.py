@@ -5,7 +5,7 @@ import fal_client
 import google.generativeai as genai
 from ..models.schemas import VideoRequest, VideoGenerationPrompts, TextOverlays
 from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
-from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video, add_watermark
+from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video, add_watermark, fade_in_text, embed_text_clips
 from PIL import ImageColor
 
 def on_queue_update(update):
@@ -84,6 +84,81 @@ RIGHT ✓:
 - Sometimes the user might provide some additional guidelines. Make sure to write all your prompts based on the given guidelines.
 - If no additional guidelines are provided, just ignore this section.
 
+
+## Video Generation Styles (IMPORTANT!)
+
+IMPORTANT: These styles only apply to MOTION prompts. Keyframes and product shots should remain style-neutral.
+
+### Available Styles:
+
+1. **Hand Drawn**
+   - Characteristics: Sketchy, organic, flowing lines with visible strokes
+   - Motion should emphasize hand-drawn feeling with:
+     * Rough, organic transitions
+     * Sketch-like movements
+     * Slight wobble or imperfection in motion
+     * Hand-drawn effects and particles
+   
+   Example Motion Prompt:
+   ```
+   Motion:
+   VitaBoost Energy Drink bottle sketches itself into existence with flowing pencil lines, energetic sketch marks swirl around the bottle, rough hand-drawn sparkles pulse outward with each rotation, bottle spins with slightly uneven hand-animated motion
+   ```
+
+2. **Handmade 3D**
+   - Characteristics: Clay-like, tactile, physically crafted feel
+   - Motion should suggest physical manipulation:
+     * Clay-morph transitions
+     * Stop-motion-style movements
+     * Fingerprint-like textures
+     * Physically plausible deformations
+
+3. **Realistic Urban Drama**
+   - Characteristics: Cinematic, gritty, high-contrast
+   - Motion should reflect film-like qualities:
+     * Dynamic camera movements
+     * Dramatic lighting shifts
+     * Urban environment reflections
+     * Atmospheric effects like dust or vapor
+
+   Example Motion Prompt:
+   ```
+   Motion:
+   LuxeGlow Serum bottle emerges through cinematic fog, camera tracks dramatically around the bottle with slight handheld shake, urban lights create dynamic reflections across the surface, atmospheric particles catch dramatic rim lighting
+   ```
+
+4. **2D Art**
+   - Characteristics: Flat, graphic, bold shapes
+   - Motion should maintain 2D perspective:
+     * Flat plane movements
+     * Graphic shape transitions
+     * Vector-style effects
+     * Clean, precise motions
+
+5. **Pop Art**
+   - Characteristics: Bold, vibrant, comic-book style
+   - Motion should be energetic and graphic:
+     * Comic panel-style transitions
+     * Bold color shifts
+     * Halftone patterns
+     * Graphic effect overlays
+
+6. **Digital Engraving**
+   - Characteristics: Fine lines, detailed hatching, etched look
+   - Motion should suggest etched precision:
+     * Line-by-line reveals
+     * Precise, mechanical movements
+     * Etched shading effects
+     * Technical, detailed transitions
+
+### Style Application Guidelines:
+1. Maintain product authenticity while applying style
+2. Keep motion consistent with chosen style throughout segment
+3. Ensure product features remain clear despite stylistic effects
+4. Use style-appropriate effects and transitions
+5. Consider style-specific lighting and texturing
+
+
 ## Video Pacing Guidelines
 
 ### For Shorter Videos (2-3 segments):
@@ -114,61 +189,45 @@ After receiving the last frame of the previous segment:
 1. Next Segment's Keyframe
 2. Next Segment's Motion
 
-## Writing Examples
-
-### Good Examples:
-
-#### Two-Segment Video Example:
-```
-[Product Shot]
-SunBurst Energy Can floats in vibrant lime space, rim lighting defining aluminum edges, royal purple accents highlighting metallic texture
-
-[Segment 1: 0-5s]
-Keyframe:
-SunBurst Energy Can emerges from darkness, suspended in vibrant lime atmosphere, volumetric lighting highlights metallic surface
-
-Motion:
-SunBurst Energy Can bursts through royal purple energy wave, rotating 180 degrees to reveal product details, camera arcs 90 degrees around can
-
-[Segment 2: 5-10s]
-Keyframe:
-SunBurst Energy Can radiates royal purple waves, vibrant lime particles frame composition
-
-Motion:
-SunBurst Energy Can levitates upward with smooth motion, royal purple energy ribbons spiral around the can
-```
-
-### Bad Examples:
-
-#### Breaking Stateless Rule:
-```
-[Keyframe]
-The VitaBoost bottle continues floating where it was, with the same effects
-[Why it's bad: References previous state]
-
-[Better Version]
-Keyframe:
-VitaBoost Energy Drink bottle floats centered in frame, royal purple energy effects surrounding its surface
-```
-
-#### Poor Product Reference:
-```
-[Motion]
-The product rotates while particles swirl
-[Why it's bad: Generic "product" reference]
-
-[Better Version]
-Motion:
-LuxeGlow Serum bottle rotates 360 degrees while golden particles spiral outward from its surface
-```
-
-Remember: Each prompt must be self-contained and use full product names. Never reference other frames or use generic terms.
-
 ## Post-Production Text Overlays (IMPORTANT!)
 
 IMPORTANT: Text overlay suggestions should ONLY be provided after receiving and reviewing the complete final video. DO NOT provide text suggestions during the segment-by-segment creation process.
 
-After receiving and watching the final rendered video without text, analyze the complete video and provide comprehensive text overlay suggestions in the following format:
+### Font Types and Usage
+Choose from three font styles based on the text purpose:
+1. Normal (Inter): 
+   - Use for detailed information, specifications, and secondary messages
+   - Best for longer text and clear readability
+   - Example: Product features, descriptions
+
+2. Bold (Bebas Neue):
+   - Use for impactful headlines and primary messages
+   - Perfect for short, attention-grabbing text
+   - Example: Brand slogans, main product benefits
+
+3. Stylish (Playfair):
+   - Use for premium, elegant messaging
+   - Best for brand names and sophisticated copy
+   - Example: Brand name, premium product qualities
+
+### Placement Considerations
+- Analyze the video to find areas that:
+   1. Have minimal motion or activity
+   2. Don't contain important product details
+   3. Provide clear contrast for text
+   4. Won't interfere with key visual elements
+- Avoid placing text over:
+   1. Main product features
+   2. Important visual transitions
+   3. Areas with complex motion
+   4. Crucial brand elements
+
+### Color Selection Guidelines
+- Choose colors in RGB format (r,g,b) that:
+   1. Contrast well with the background during the text's duration
+   2. Complement the overall color scheme
+   3. Ensure readability (check contrast against all backgrounds the text appears over)
+   4. Consider using a subtle drop shadow if needed for legibility
 
 ### Text Overlay Format
 ```
@@ -179,43 +238,49 @@ Position: (X%, Y%) where:
   - X: 0 = left edge, 100 = right edge
   - Y: 0 = top edge, 100 = bottom edge
   Example: (50,50) = center of screen
+Font: Specify type (Normal/Bold/Stylish)
+Color: RGB values in format (r,g,b)
 Font Size: Choose from:
   - Small (3% of screen height)
   - Medium (5% of screen height)
   - Large (8% of screen height)
-Animation: Choose from:
-  - Fade (0.3s duration)
-  - Bounce In
-  - Slide In (specify direction: left/right/top/bottom)
 Context: Brief description of what's happening in video during this text
+Background Analysis: Description of the background colors/elements during text duration
 ```
 
 ### Example Text Overlay Plan:
 ```
 [Text 1]
-Content: "Premium Energy Drink"
+Content: "PREMIUM ENERGY"
 Time: 0.0-2.5
 Position: (50,30)
+Font: Bold
+Color: (255,255,255)
 Font Size: Large
-Animation: Fade
-Context: Product first appears from darkness
+Context: Product emerges from darkness
+Background Analysis: Dark gradient background provides strong contrast
 
 [Text 2]
-Content: "Natural Ingredients"
+Content: "Made with Natural Spring Water"
 Time: 2.8-4.2
 Position: (75,50)
+Font: Normal
+Color: (220,220,220)
 Font Size: Medium
-Animation: Slide In (left)
-Context: Product rotates to show ingredient list
+Context: Product rotation showing ingredients
+Background Analysis: Light blue background, avoiding busy particle effects
 
 [Text 3]
-Content: "Available Now"
+Content: "Elevate Your Experience"
 Time: 4.5-6.0
 Position: (50,85)
-Font Size: Small
-Animation: Bounce In
+Font: Stylish
+Color: (255,215,0)
+Font Size: Medium
 Context: Final product hero shot
+Background Analysis: Clean, dark background in lower third
 ```
+Remember: Each prompt must be self-contained and use full product names. Never reference other frames or use generic terms.
 """
                     )
         self.llm_json_writer = genai.GenerativeModel(
@@ -228,7 +293,7 @@ Context: Final product hero shot
                 "response_schema": VideoGenerationPrompts
             },
             safety_settings=safety_settings,
-            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field."
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field. For the video styles section choose one from 'Hand Drawn', 'Handmade 3D', 'Realistic Urban Drama', '2D Art', 'Pop Art', 'Digital Engraving'."
         )
 
         self.llm_json_text_overlay_writer = genai.GenerativeModel(
@@ -241,7 +306,7 @@ Context: Final product hero shot
                 "response_schema": TextOverlays
             },
             safety_settings=safety_settings,
-            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field. For positions, the text might contain %, but you only need to provide the number as float. Choose font size from 'small', 'medium', 'large'. For animation, choose from 'fade', 'bounce in', 'slide in'. For slide in, specify the direction as 'left', 'right', 'top', 'bottom' in the animation_extra_info field"
+            system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field. For positions, the text might contain %, but you only need to provide the number as float. Choose font size from 'small', 'medium', 'large'. For font, choose from 'Normal', 'Bold', 'Stylish'. For color, provide RGB values in the format rgb(r,g,b)."
         )
     def generate_video(self) -> tuple[str, str]:
         # if the request is for EcoVive Bottle, we will just provide the video we created manually
@@ -284,7 +349,8 @@ tagline: {video_request_dict['video_details']['tagline']}
 brand_palette: {video_request_dict['video_details']['brand_palette']}
 cta_text: {video_request_dict['video_details']['cta_text']}
 total_segments: {total_segments}
-additional_guidelines: {video_request_dict['additional_guidelines'] if video_request_dict['additional_guidelines'] else "None"}
+additional_guidelines: {video_request_dict['additional_guidelines'] if video_request_dict['additional_guidelines'] else "None"}\
+video_style: {video_request_dict['video_style']}
 The product video and logo have been attached for reference.
 """     
         colors = video_request_dict['video_details']['brand_palette']
@@ -390,21 +456,61 @@ The product video and logo have been attached for reference.
         response = chat_sess.send_message(input_text).text
         print(f"text_prompt_{response=}")
         text_overlays = json.loads(self.llm_json_text_overlay_writer.generate_content(response).text)
+        print(f"text_overlays={text_overlays}")
 
-        
+        # generate the final video with text overlays
+        output_path_t = "data/merged_output_watermarked_text.mp4"
+        self.generate_text_overlay(text_overlays, output_path_w, output_path_t)
+
         # upload and crop the video based on the given dimensions
-        output_url = upload_and_crop_video(output_path_w, self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
+        output_url = upload_and_crop_video(output_path_t, self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
 
-        return output_path_w, output_url
+        return output_path_t, output_url
     
     def get_first_frame(self,prompts:Dict,colors:List) -> str:
+        # getting the style
+        video_style = self.video_request.video_style
+        if "drawn" in video_style.lower():
+            style = "digital_illustration/hand_drawn"
+        elif "3d" in video_style.lower():
+            style = "digital_illustration/handmade_3d"
+        elif "urban" in video_style.lower():
+            style = "realistic_image/urban_drama"
+        elif "2d" in video_style.lower():
+            style = "digital_illustration/2d_art_poster"
+        elif "pop" in video_style.lower():
+            style = "digital_illustration/pop_art"
+        elif "engraving" in video_style.lower():
+            style = "digital_illustration/digital_engraving"
+        else:
+            style = "realistic_image/studio_portrait"
+
+        #calculate aspect ratio to be one from 16:9, 9:16, 4:3, 3:4, 1:1
+        aspect_ratio = self.video_request.video_details.dimensions.width/self.video_request.video_details.dimensions.height
+        if aspect_ratio > 1:
+            # choose the closest aspect ratio
+            if aspect_ratio > 1.7:
+                image_size = "landscape_16_9"
+            else:
+                image_size = "landscape_4_3"
+        elif aspect_ratio < 1:
+            if aspect_ratio < 0.6:
+                image_size = "portrait_16_9"
+            else:
+                image_size = "portrait_4_3"
+        else:
+            image_size = "square_hd"
+
+
+
+
         try:
             result = fal_client.subscribe(
                 "fal-ai/recraft-v3",
                 arguments={
                     "prompt": prompts["keyframe_prompt"],
-                    "image_size": "landscape_16_9",
-                    "style": "realistic_image/studio_portrait",
+                    "image_size": image_size,
+                    "style": style,
                     "colors": colors
                 },
                 with_logs=True,
@@ -420,7 +526,7 @@ The product video and logo have been attached for reference.
         """generate a 5 seconds long segment, these take ~220 seconds each to generate"""
         try:
             result = fal_client.subscribe(
-                "fal-ai/kling-video/v1.6/pro/image-to-video",
+                "fal-ai/kling-video/v1.6/standard/image-to-video",
                 arguments={
                     "prompt":prompt,
                     "image_url": image_url,
@@ -450,5 +556,10 @@ The product video and logo have been attached for reference.
         print(f"{last_frame_url=}")
         return last_frame_url
     
-    def generate_text_overlay(self, text_overlays:Dict, video_path:str):
-        pass
+    def generate_text_overlay(self, text_overlays:Dict, video_path:str, output_path:str) -> str:
+        text_clips = []
+        for text in text_overlays["texts"]:
+            text_clip = fade_in_text(video_path, text["text_duration"], text["text"], text["font_size"], text["position"], text["color"], text["font"])
+            text_clips.append(text_clip)
+        embed_text_clips(text_clips, video_path,output_path)
+        return output_path

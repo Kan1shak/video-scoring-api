@@ -7,6 +7,6 @@ fastapi
 fal-client
 cloudinary
 opencv-python
-moviepy==1.0.3
+moviepy==2.1.2
 uvicorn
 numpy

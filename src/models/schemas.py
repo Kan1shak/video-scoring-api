@@ -19,6 +19,7 @@ class VideoRequest(BaseModel):
     video_details: VideoDetails
     scoring_criteria: Dict[str, int]
     additional_guidelines: str
+    video_style: str
 
 class Resolution(BaseModel):
     width: int
@@ -59,16 +60,14 @@ class TextPosition(typing.TypedDict):
     x: float
     y: float
 
-class TextAnimation(typing.TypedDict):
-    animation_type: str
-    animation_extra_info: str
 
 class TextOverlay(typing.TypedDict):
     text: str
     text_duration: TextDuration
     position: TextPosition
     font_size: str # small, medium, large
-    text_animation: TextAnimation
+    font: str # font type from Normal, Bold, Stylish
+    color: str # RGB color code
 
 class TextOverlays(typing.TypedDict):
     texts: List[TextOverlay]
