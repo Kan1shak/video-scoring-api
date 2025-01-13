@@ -6,9 +6,12 @@ import os
 from .models.schemas import VideoRequest, VideoResponse
 from .services.video_scorer import VideoScorer
 from .services.video_generator import VideoGenerator
-from .utils.helpers import get_video_metadata
+from .utils.helpers import get_video_metadata, send_email
+from .utils.db_helpers import init_db, set_response_data, get_response_data
 
 app = FastAPI(title="Video Scoring API | Team Chill Guys")
+init_db()
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
 
 @app.post("/score-video", response_model=VideoResponse)
 async def score_video(
@@ -22,6 +25,7 @@ async def score_video(
     try:
         video_path, generated_url = generator.generate_video()
         video_path = Path(video_path)
+        print(f"Generated video url: {generated_url}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -44,7 +48,15 @@ async def score_video(
             scoring=scoring,
             metadata=metadata
         )
-        
+        # save response to db
+        response = set_response_data(response)
+        # send email if email is provided
+        if request.email:
+            send_email("VideoCreativeGen", request.email, "Your Requested Video is Ready", 
+                       f"""Thank you for using VideoCreativeGen. 
+Your requested video has been generated and scored.
+Access it now at {FRONTEND_URL}/{response.identifier}.
+""")
         return response
     
     except Exception as e:
@@ -56,6 +68,16 @@ async def score_video(
             #video_path.unlink()
             ...
 
+@app.get("/score-video/{identifier}/", response_model=VideoResponse)
+async def get_scored_video(identifier: str):
+    """
+    Get the scored video response from sqlite db
+    """
+    try:
+        response = get_response_data(identifier)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

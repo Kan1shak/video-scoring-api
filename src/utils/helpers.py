@@ -1,5 +1,6 @@
 import typing
 from typing import List, Tuple, Dict
+import uuid
 import requests
 import os
 import cv2
@@ -201,6 +202,22 @@ def fade_in_text(video_path:str, duration:Dict, content:str, size:str, position:
     return txt_clip
 
 def embed_text_clips(video_path:str, text_clips:List[TextClip], output_path:str) -> None:
-    composite = CompositeVideoClip([VideoFileClip(video_path), *text_clips] )
-    composite.write_videofile(output_path, codec='libx264', audio_codec='aac')
-    composite.close()
+    try:
+        composite = CompositeVideoClip([VideoFileClip(video_path), *text_clips] )
+        composite.write_videofile(output_path, codec='libx264', audio_codec='aac')
+        composite.close()
+    except Exception as e:
+        print(f"Error embedding text clips: {e}")
+        raise e
+    
+
+def send_email(sender_name:str, reciever:str, subject:str, message:str)->requests.Response:
+    MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
+    MAIL_DOMAIN = os.getenv('MAIL_DOMAIN')
+    return requests.post(
+  		f"https://api.mailgun.net/v3/{MAIL_DOMAIN}/messages",
+  		auth=("api", MAILGUN_API_KEY),
+  		data={"from": f"{sender_name} <videogen@{MAIL_DOMAIN}>",
+  			"to": [reciever],
+  			"subject": subject,
+  			"text": message})

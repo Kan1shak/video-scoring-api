@@ -296,8 +296,51 @@ Remember: Each prompt must be self-contained and use full product names. Never r
             system_instruction="From the given text, extract the required data for the given JSON schema and provide the JSON response. If some data is missing, just write 'None' in that particular respective field. For the video styles section choose one from 'Hand Drawn', 'Handmade 3D', 'Realistic Urban Drama', '2D Art', 'Pop Art', 'Digital Engraving'."
         )
 
+        self.llm_xml_writer = genai.GenerativeModel(
+            model_name= "gemini-2.0-flash-exp",
+            generation_config={
+                "temperature": 1,
+                "top_p": 0.95,
+                "top_k": 40,
+            },
+            safety_settings=safety_settings,
+            system_instruction="""From the given text extract the required data in the following xml-like format:
+<texts>
+  <text>
+    <color>
+      <!-- Format: rgb(R,G,B) where R,G,B are 0-255 -->
+    </color>
+    <font>
+      <!-- One of: Normal, Bold, Stylish -->
+    </font>
+    <font_size>
+      <!-- One of: small, medium, large -->
+    </font_size>
+    <position>
+      <x>
+        <!-- Float value for x coordinate -->
+      </x>
+      <y>
+        <!-- Float value for y coordinate -->
+      </y>
+    </position>
+    <content>
+      <!-- String content -->
+    </content>
+    <text_duration>
+      <start>
+        <!-- Float value for start time in seconds -->
+      </start>
+      <end>
+        <!-- Float value for end time in seconds -->
+      </end>
+    </text_duration>
+  </text>
+</texts>
+"""
+        )
         self.llm_json_text_overlay_writer = genai.GenerativeModel(
-            model_name= "gemini-1.5-flash",
+            model_name= "gemini-2.0-flash-exp",
             generation_config={
                 "temperature": 1,
                 "top_p": 0.95,
@@ -455,7 +498,11 @@ The product video and logo have been attached for reference.
 
         response = chat_sess.send_message(input_text).text
         print(f"text_prompt_{response=}")
-        text_overlays = json.loads(self.llm_json_text_overlay_writer.generate_content(response).text)
+
+        text_xml = self.llm_xml_writer.generate_content(response).text
+        print(f"text_xml={text_xml}")
+
+        text_overlays = json.loads(self.llm_json_text_overlay_writer.generate_content(text_xml).text)
         print(f"text_overlays={text_overlays}")
 
         # generate the final video with text overlays
@@ -561,5 +608,6 @@ The product video and logo have been attached for reference.
         for text in text_overlays["texts"]:
             text_clip = fade_in_text(video_path, text["text_duration"], text["text"], text["font_size"], text["position"], text["color"], text["font"])
             text_clips.append(text_clip)
-        embed_text_clips(text_clips, video_path,output_path)
+        print(f"succesfully generated {len(text_clips)} text clips")
+        embed_text_clips(video_path,text_clips, output_path)
         return output_path

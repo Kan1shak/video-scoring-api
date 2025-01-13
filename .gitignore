@@ -21,3 +21,5 @@ uploads/
 logs/
 *.log
 data/
+*.db
+public/

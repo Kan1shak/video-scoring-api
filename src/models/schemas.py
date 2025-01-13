@@ -20,6 +20,7 @@ class VideoRequest(BaseModel):
     scoring_criteria: Dict[str, int]
     additional_guidelines: str
     video_style: str
+    email:str
 
 class Resolution(BaseModel):
     width: int
@@ -46,6 +47,7 @@ class VideoResponse(BaseModel):
     video_url: str
     scoring: Dict
     metadata: Metadata
+    identifier: str
 
 class VideoGenerationPrompts(BaseModel):
     hero_prompt: str
