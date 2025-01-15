@@ -15,16 +15,18 @@ export const useSharedContext = () => {
 
 export const SharedProvider = ({ children }) => {
   const [inputData, setInputData] = useState({});  
-  const [outputData, setOutputData] = useState({}); 
+  const [outputData, setOutputData] = useState({});
+  
+  
 
   const updateInputData = (newValue) => {
     setInputData(newValue);
-    console.log(inputData);
   };
 
 
   const updateOutputData = (newValue) => {
     setOutputData(newValue);
+    console.log(outputData)
   };
 
   return (

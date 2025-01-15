@@ -1,0 +1,9 @@
+{
+    "rewrites": [
+      { "source": "/dashboard/:id", "destination": "/" },
+      { "source": "/input-form", "destination": "/" },
+      { "source": "/catalogue", "destination": "/" },
+      { "source": "/(.*)", "destination": "/" }
+    ]
+  }
+  
