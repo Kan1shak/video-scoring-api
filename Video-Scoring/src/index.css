@@ -3,9 +3,73 @@
 @tailwind utilities;
 
 
+body {
+  background-color: #000000;
+  overflow: scroll;
+  overflow-x: hidden;
+  scrollbar-width: none; /* For Firefox */
+}
+
+.justification-button {
+  background-color: #1f2937;
+  border: 1px solid #808080;
+  border-radius: 10px;
+  padding: 20px;
+  width: 23%;
+  transition: all 0.1s ease-in-out;
+}
+
+.justification-button:hover {
+  background-color: #101317;
+  border: 1px solid #808080;
+  border-radius: 10px;
+  padding: 20px;
+  width: 23%;
+}
+
+.justifications-container {
+  margin: 0px 25px ;
+  border-radius: 5px;
+  background-color: #1f2937;
+  display: flex;
+  justify-content: flex-start;
+  padding: 50px;
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 30px;
+}
+
+.justifications-card {
+  background-color: #111827;
+  border: 1px solid #808080;
+  border-radius: 10px;
+  padding: 20px;
+  width: 23%;
+}
+
+.justificationId {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.justificationId {
+  font-size: 1.5rem;  
+  color: #fff;
+  justify-content: flex-start;
+}
+
+.justificationValue{
+  font-size: 0.75rem;
+  color: #bdbdbd;
+}
+
 .Scroll{
-  -ms-overflow-style: none; 
-  scrollbar-width: none;
+  scrollbar-width: none; /* For Firefox */
+}
+
+.Scroll-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome, Safari, and Opera */
 }
 
 .slideIn{
@@ -13,6 +77,49 @@
   transition: transform 3s;
 }
 
+@keyframes shine{
+  0%{  backgroundPosition: 200% 0
+  } 
+  100% {backgroundPosition: -200% 0}
+}
+
+.shine {
+  animation: "shine 2s linear infinite",
+}
+
+.styled-div {
+  height: 20px; /* Adjust as needed */
+  background: 
+    linear-gradient(to bottom, #000000, #1a1a1a 50%, #000000), /* Gradient background */
+    linear-gradient(to right, #625353, #4f4444); /* Thin horizontal line */
+  background-size: 100% 100%, 100% 4px; /* First layer fills, second is the line */
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, 50%; /* Center line vertically */
+  position: relative;
+}
+
+
+.card{
+  margin: 0 auto;
+  padding: 2em;
+  width: 300px;
+  background: #1c1f2b;
+  text-align: center;
+  border-radius:10px;
+  position: relative;
+}
+
+.card::after{
+  content: '';
+  position: absolute;
+  height: calc(100% + 6px);
+  width: calc(100% + 6px);
+  background:red;
+  top:50%;
+  left:50%;
+  translate:-50% -50%;
+  z-index: -1;
+}
 
 
 @keyframes scroll {
@@ -31,6 +138,54 @@
   100% {
     transform: translateX(100%);
   }
+}
+
+.file-input {
+  height: 28px;
+  width: 28px;
+  border-radius: 100%;
+}
+
+.file-input:hover {
+  background-color: #ddd;
+}
+
+.inputbox{
+  width: 240px;
+  height: 2rem;
+  border-radius: 8px;
+  padding: 8px;
+  background-color: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  font-size: medium;
+}
+
+.filebox{
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 100%;
+  padding: 8px;
+  background-color: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  font-size: medium;
+}
+
+textArea::placeholder{
+  color: #8b8585;
+  font-size: xx-large;
+}
+
+input::placeholder{
+  color: #8b8585;
+  font-size: smaller;
+  text-wrap: ellipsis;
+}
+
+.inputbox::placeholder{
+  color: #8b8585;
+  font-size: smaller;
 }
 
 .animate-scroll {
@@ -61,4 +216,22 @@
   font-size: 12px;
   font-weight: bold;
   color: white;
+}
+
+@keyframes gradient{
+  0%{
+    background-position: 0% 50%;
+  }
+  50%{
+    background-position: 100% 50%;
+  }
+  100%{
+    background-position: 0% 50%;
+  }
+}
+
+.gradient{
+  background: linear-gradient(45deg,#7a7f84,#aa9da1, #f2f2e7);
+  background-size: 400% 400%;
+  background-clip: text;
 }
