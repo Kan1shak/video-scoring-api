@@ -170,7 +170,7 @@ def get_stroke_color(rgb:Tuple)->Tuple:
     new_r, new_g, new_b = colorsys.hls_to_rgb(h, new_l, s)
     return tuple(round(x * 255) for x in (new_r, new_g, new_b))
 
-def fade_in_text(video_path:str, duration:Dict, content:str, size:str, position:Dict, color:str, font:str) -> None:
+def fade_in_text(video_path:str, duration:Dict, content:str, size:str, position:Dict, color:str, font:str,aspect_ratio:str) -> None:
     font_sizes = {
         "small": 30,
         "medium": 60,
@@ -190,8 +190,10 @@ def fade_in_text(video_path:str, duration:Dict, content:str, size:str, position:
         "bold": "resources/bebas.ttf",
         "stylish": "resources/playfair.ttf"
     }
-
-    txt_clip = TextClip(fonts_dict[font],content, margin=(10,10),font_size=font_sizes[size], color=color, method="label",stroke_color=get_stroke_color(color),stroke_width=2).with_duration(total_duration).with_start(duration["start"])
+    if aspect_ratio == "landscape":
+        txt_clip = TextClip(fonts_dict[font],content, margin=(10,10),font_size=font_sizes[size], color=color, method="label",stroke_color=get_stroke_color(color),stroke_width=2).with_duration(total_duration).with_start(duration["start"])
+    else:
+        txt_clip = TextClip(fonts_dict[font],content, margin=(10,10),font_size=font_sizes[size], color=color, method="caption",stroke_color=get_stroke_color(color),stroke_width=2).with_duration(total_duration).with_start(duration["start"], size=(width - 10, None))
     textclip_width, textclip_height = txt_clip.size
 
     # calculate the position
@@ -221,3 +223,24 @@ def send_email(sender_name:str, reciever:str, subject:str, message:str)->request
   			"to": [reciever],
   			"subject": subject,
   			"text": message})
+
+def convert_xml_string_to_float(data:Dict)->Dict:
+    texts = data['texts']['text']
+    
+    for text in texts:
+        text['position']['x'] = float(text['position']['x'])
+        text['position']['y'] = float(text['position']['y'])
+        
+        text['text_duration']['start'] = float(text['text_duration']['start'])
+        text['text_duration']['end'] = float(text['text_duration']['end'])
+    
+    restructured = {
+        'texts': data["texts"]['text']
+    }
+    texts_list = restructured['texts']
+
+    for text_obj in texts_list:
+        text_obj['text'] = text_obj.pop('content')
+    
+    restructured['texts'] = texts_list
+    return restructured

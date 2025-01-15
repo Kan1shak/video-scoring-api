@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import shutil
 import os
@@ -10,6 +11,13 @@ from .utils.helpers import get_video_metadata, send_email
 from .utils.db_helpers import init_db, set_response_data, get_response_data
 
 app = FastAPI(title="Video Scoring API | Team Chill Guys")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 init_db()
 FRONTEND_URL = os.environ.get("FRONTEND_URL")
 
@@ -46,7 +54,8 @@ async def score_video(
             status="success",
             video_url=generated_url,
             scoring=scoring,
-            metadata=metadata
+            metadata=metadata,
+            identifier=""
         )
         # save response to db
         response = set_response_data(response)

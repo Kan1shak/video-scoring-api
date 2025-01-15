@@ -1,12 +1,14 @@
 import json
 import math
+import re
 from typing import Dict, List
 import fal_client
 import google.generativeai as genai
 from ..models.schemas import VideoRequest, VideoGenerationPrompts, TextOverlays
 from ..utils.llm_helpers import upload_to_gemini, wait_for_files_active, safety_settings, gemini_generation_config
-from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video, add_watermark, fade_in_text, embed_text_clips
+from ..utils.helpers import download_file, upload_image, get_last_frame, merge_videos, upload_and_crop_video, add_watermark, fade_in_text, embed_text_clips, convert_xml_string_to_float
 from PIL import ImageColor
+from xmltodict import parse as xml_parse
 
 def on_queue_update(update):
     if isinstance(update, fal_client.InProgress):
@@ -84,6 +86,7 @@ RIGHT ✓:
 - Sometimes the user might provide some additional guidelines. Make sure to write all your prompts based on the given guidelines.
 - If no additional guidelines are provided, just ignore this section.
 
+IMPORTANT: Do not include any text other than the product name in the motion prompt. Text overlays will be added later.
 
 ## Video Generation Styles (IMPORTANT!)
 
@@ -306,7 +309,7 @@ Remember: Each prompt must be self-contained and use full product names. Never r
             safety_settings=safety_settings,
             system_instruction="""From the given text extract the required data in the following xml-like format:
 <texts>
-  <text>
+  <x`zz>
     <color>
       <!-- Format: rgb(R,G,B) where R,G,B are 0-255 -->
     </color>
@@ -502,12 +505,28 @@ The product video and logo have been attached for reference.
         text_xml = self.llm_xml_writer.generate_content(response).text
         print(f"text_xml={text_xml}")
 
-        text_overlays = json.loads(self.llm_json_text_overlay_writer.generate_content(text_xml).text)
-        print(f"text_overlays={text_overlays}")
+        # text_overlays = json.loads(self.llm_json_text_overlay_writer.generate_content(text_xml).text)
+        # print(f"text_overlays={text_overlays}")
+
+        pattern = r'<texts>[\s\S]*?</texts>'
+        match = re.search(pattern, text_xml)
+        if match:
+            text_xml = match.group(0)
+            text_overlays = xml_parse(text_xml)
+            # text_overlays = json.loads(json.dumps(text_overlays))
+            text_overlays = convert_xml_string_to_float(text_overlays)
+            print(f"text_overlays={text_overlays}")
+        else:
+            text_overlays = json.loads(self.llm_json_text_overlay_writer.generate_content(text_xml).text)
+            print(f"text_overlays={text_overlays}")
 
         # generate the final video with text overlays
         output_path_t = "data/merged_output_watermarked_text.mp4"
-        self.generate_text_overlay(text_overlays, output_path_w, output_path_t)
+        if self.video_request.video_details.dimensions.width > self.video_request.video_details.dimensions.height:
+            aspect_ratio = "landscape"
+        else:
+            aspect_ratio = "portrait"
+        self.generate_text_overlay(text_overlays, output_path_w, output_path_t,aspect_ratio)
 
         # upload and crop the video based on the given dimensions
         output_url = upload_and_crop_video(output_path_t, self.video_request.video_details.dimensions.width, self.video_request.video_details.dimensions.height)
@@ -603,10 +622,10 @@ The product video and logo have been attached for reference.
         print(f"{last_frame_url=}")
         return last_frame_url
     
-    def generate_text_overlay(self, text_overlays:Dict, video_path:str, output_path:str) -> str:
+    def generate_text_overlay(self, text_overlays:Dict, video_path:str, output_path:str, aspect_ratio:str="landscape") -> str:
         text_clips = []
         for text in text_overlays["texts"]:
-            text_clip = fade_in_text(video_path, text["text_duration"], text["text"], text["font_size"], text["position"], text["color"], text["font"])
+            text_clip = fade_in_text(video_path, text["text_duration"], text["text"], text["font_size"], text["position"], text["color"], text["font"], aspect_ratio)
             text_clips.append(text_clip)
         print(f"succesfully generated {len(text_clips)} text clips")
         embed_text_clips(video_path,text_clips, output_path)

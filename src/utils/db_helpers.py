@@ -23,6 +23,7 @@ def init_db():
 def set_response_data(video_response:VideoResponse)->VideoResponse:
     response_id = generate_unique_id()
     conn = sqlite3.connect('video_responses.db')
+    video_response.identifier = response_id
     c = conn.cursor()
     response_json = video_response.model_dump_json()
     c.execute('INSERT INTO video_responses (id, response_data) VALUES (?, ?)', 
@@ -30,7 +31,6 @@ def set_response_data(video_response:VideoResponse)->VideoResponse:
     
     conn.commit()
     conn.close()
-    video_response.identifier = response_id
     return video_response
 
 def get_response_data(response_id:str)->Optional[VideoResponse]:
