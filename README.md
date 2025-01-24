@@ -238,7 +238,7 @@ The API employs a three-stage evaluation process:
 - Product Focus (15 points)
 - Call-to-Action (15 points)
 - Audience Relevance (10 points)
-
+- This also supports dynamic criteria where you can specify maximum points.
 Total possible score: 100 points
 
 Each criterion includes detailed justifications in the API response, explaining the rationale behind the scores and providing actionable feedback for improvements.
